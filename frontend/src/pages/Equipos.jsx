@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import '../styles/equipo.css'
 
 export default function Equipos() {
   const [equipos, setEquipos] = useState([
@@ -18,42 +19,42 @@ export default function Equipos() {
     }
   ])
 
-  return (
-    <div>
-      <h2>Gestión de Equipos</h2>
+   return (
+    <div className="equipos-container">
+      <h2 className="view-title"></h2>
 
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Presupuesto</th>
-            <th>Carros</th>
-            <th>Conductores</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+      <div className="equipos-grid">
+        {equipos.map(e => (
+          <div key={e.id} className="equipo-card">
+            <div className="equipo-header">
+              <h3>{e.nombre}</h3>
+            </div>
 
-        <tbody>
-          {equipos.map(e => (
-            <tr key={e.id}>
-              <td>{e.id}</td>
-              <td>{e.nombre}</td>
-              <td>₡{e.presupuesto.toLocaleString()}</td>
-              <td>{e.carros} / 2</td>
-              <td>{e.conductores}</td>
-              <td>
-                <button>Editar</button>{' '}
-                <button>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            <div className="equipo-info">
+              <p>
+                <strong>Presupuesto:</strong><br />
+                ₡{e.presupuesto.toLocaleString()}
+              </p>
 
-      <br />
+              <p>
+                <strong>Carros:</strong> {e.carros} / 2
+              </p>
+
+              <p>
+                <strong>Conductores:</strong> {e.conductores}
+              </p>
+            </div>
+
+            <div className="equipo-actions">
+              <button className="btn btn-edit">Editar</button>
+              <button className="btn btn-delete">Eliminar</button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <button
+        className="btn btn-add"
         onClick={() =>
           setEquipos([
             ...equipos,
@@ -67,7 +68,7 @@ export default function Equipos() {
           ])
         }
       >
-        Agregar Equipo
+        + Agregar Equipo
       </button>
     </div>
   )

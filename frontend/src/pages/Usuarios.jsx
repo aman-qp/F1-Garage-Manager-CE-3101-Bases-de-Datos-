@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import Header from '../components/Header'
+import '../styles/usuarios.css'
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([
@@ -9,50 +11,50 @@ export default function Usuarios() {
 
   return (
     <div>
-      <h2>Gestión de Usuarios</h2>
+     
 
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Rol</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+      <div className="usuarios-container">
+              <table className="usuarios-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
 
-        <tbody>
-          {usuarios.map(usuario => (
-            <tr key={usuario.id}>
-              <td>{usuario.id}</td>
-              <td>{usuario.nombre}</td>
-              <td>{usuario.rol}</td>
-              <td>
-                <button>Editar</button>{' '}
-                <button>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                <tbody>
+                  {usuarios.map(usuario => (
+                    <tr key={usuario.id}>
+                      <td>{usuario.id}</td>
+                      <td>{usuario.nombre}</td>
+                      <td>{usuario.rol}</td>
+                      <td>
+                        <button className="btn btn-edit">Editar</button>{' '}
+                        <button className="btn btn-delete">Eliminar</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
 
-      <br />
-
-      <button
-  onClick={() =>
-    setUsuarios([
-      ...usuarios,
-      {
-        id: usuarios.length + 1,
-        nombre: 'Nuevo Usuario',
-        rol: 'Usuario'
-      }
-    ])
-  }
->
-  Agregar Usuario
-</button>
-
-    </div>
-  )
+              <button
+                className="btn-add"
+                onClick={() =>
+                  setUsuarios([
+                    ...usuarios,
+                    {
+                      id: usuarios.length + 1,
+                      nombre: 'Nuevo Usuario',
+                      rol: 'Usuario'
+                    }
+                  ])
+                }
+              >
+                ➕ Agregar Usuario
+              </button>
+            </div>
+          </div>
+        )
 }

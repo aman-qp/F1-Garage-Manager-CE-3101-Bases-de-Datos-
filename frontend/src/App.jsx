@@ -1,5 +1,5 @@
 import { Routes, Route, Link } from 'react-router-dom'
-
+import Header from './components/Header'
 import Usuarios from './pages/Usuarios'
 import Equipos from './pages/Equipos'
 import Conductores from './pages/Conductores'
@@ -8,9 +8,13 @@ import Partes from './pages/Partes'
 import Inventario from './pages/Inventario'
 import Armado from './pages/Armado'
 
+
 export default function App() {
+  
   return (
-    <div>
+    <div className="app-container">
+      <Header />
+
       <nav style={{ marginBottom: '20px' }}>
         <Link to="/">Usuarios</Link> |{' '}
         <Link to="/equipos">Equipos</Link> |{' '}
@@ -19,6 +23,7 @@ export default function App() {
         <Link to="/partes">Partes</Link> |{' '}
         <Link to="/inventario">Inventario</Link> |{' '}
         <Link to="/armado">Armado</Link>
+        
       </nav>
 
       <Routes>

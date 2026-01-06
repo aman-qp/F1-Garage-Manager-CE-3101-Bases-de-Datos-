@@ -1,0 +1,57 @@
+.usuarios-container {
+  background: linear-gradient(145deg, #181818, #222);
+  padding: 2rem;
+  border-radius: 18px;
+}
+
+
+.usuarios-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.5rem;
+}
+
+.usuarios-table th {
+  background: #c40303;
+  padding: 0.75rem;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.usuarios-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #7a4141;
+  color: white;
+}
+
+.usuarios-table tr:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.btn {
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn-edit {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-delete {
+  background: #c40303;
+  color: white;
+}
+
+.btn-add {
+  margin-top: 1.5rem;
+  background: linear-gradient(95deg, #05441c, #029b3a);
+  color: white;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border-radius: 10px;
+}
