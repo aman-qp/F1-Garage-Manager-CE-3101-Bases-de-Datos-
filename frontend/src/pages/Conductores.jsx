@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import '../styles/conductor.css'
 export default function Conductores() {
   const [conductores, setConductores] = useState([
     {
@@ -16,40 +16,38 @@ export default function Conductores() {
     }
   ])
 
-  return (
-    <div>
-      <h2>Gestión de Conductores</h2>
+   return (
+    <div className="conductores-container">
 
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Habilidad (H)</th>
-            <th>Equipo</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+      <div className="conductores-grid">
+        {conductores.map(c => (
+          <div key={c.id} className="conductor-card">
+            <div className="conductor-header">
+              <h3>{c.nombre}</h3>
+              <span className="conductor-equipo">{c.equipo}</span>
+            </div>
 
-        <tbody>
-          {conductores.map(conductor => (
-            <tr key={conductor.id}>
-              <td>{conductor.id}</td>
-              <td>{conductor.nombre}</td>
-              <td>{conductor.habilidad}</td>
-              <td>{conductor.equipo}</td>
-              <td>
-                <button>Editar</button>{' '}
-                <button>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            <div className="conductor-skill">
+              <span>Habilidad</span>
+              <div className="skill-bar">
+                <div
+                  className="skill-fill"
+                  style={{ width: `${c.habilidad}%` }}
+                />
+              </div>
+              <strong>{c.habilidad}</strong>
+            </div>
 
-      <br />
+            <div className="conductor-actions">
+              <button className="btn btn-edit">Editar</button>
+              <button className="btn btn-delete">Eliminar</button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <button
+        className="btn btn-add"
         onClick={() =>
           setConductores([
             ...conductores,
@@ -62,7 +60,7 @@ export default function Conductores() {
           ])
         }
       >
-        Agregar Conductor
+        + Agregar Conductor
       </button>
     </div>
   )

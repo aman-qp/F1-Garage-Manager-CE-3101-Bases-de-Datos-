@@ -1,0 +1,57 @@
+/* ===== ARMADO ===== */
+
+.armado-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.armado-slot {
+  background: #1f1f1f;
+  border-radius: 14px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.armado-slot h3 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.armado-empty {
+  opacity: 0.6;
+  margin: 1rem 0;
+}
+
+.armado-installed {
+  margin: 1rem 0;
+  font-weight: 600;
+}
+
+.installed-name {
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  color: #ef4444;
+}
+
+/* ===== RESUMEN ===== */
+
+.armado-resumen {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);
+}
+
+.armado-resumen h3 {
+  margin-top: 0;
+}
+
+.resumen-stats {
+  display: flex;
+  justify-content: space-around;
+  font-size: 1.2rem;
+  font-weight: 900;
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import '../styles/card.css'
 export default function Partes() {
   const [partes, setPartes] = useState([
     {
@@ -34,48 +34,34 @@ export default function Partes() {
     }
   ])
 
-  return (
-    <div>
-      <h2>Catálogo de Partes</h2>
+   return (
+    <div className="cards-container">
 
-      <table border="1" cellPadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Precio</th>
-            <th>Stock</th>
-            <th>P</th>
-            <th>A</th>
-            <th>M</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
+      <div className="cards-grid">
+        {partes.map(p => (
+          <div key={p.id} className="f1-card">
+            <h3>{p.nombre}</h3>
+            <span className="card-category">{p.categoria}</span>
 
-        <tbody>
-          {partes.map(p => (
-            <tr key={p.id}>
-              <td>{p.id}</td>
-              <td>{p.nombre}</td>
-              <td>{p.categoria}</td>
-              <td>₡{p.precio.toLocaleString()}</td>
-              <td>{p.stock}</td>
-              <td>{p.P}</td>
-              <td>{p.A}</td>
-              <td>{p.M}</td>
-              <td>
-                <button>Editar</button>{' '}
-                <button>Eliminar</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+            <p><strong>Precio:</strong> ₡{p.precio.toLocaleString()}</p>
+            <p><strong>Stock:</strong> {p.stock}</p>
 
-      <br />
+            <div className="stats">
+              <span>🏎 P: {p.P}</span>
+              <span>🌬 A: {p.A}</span>
+              <span>🛞 M: {p.M}</span>
+            </div>
+
+            <div className="card-actions">
+              <button className="btn btn-edit">Editar</button>
+              <button className="btn btn-delete">Eliminar</button>
+            </div>
+          </div>
+        ))}
+      </div>
 
       <button
+        className="btn btn-add"
         onClick={() =>
           setPartes([
             ...partes,
@@ -92,7 +78,7 @@ export default function Partes() {
           ])
         }
       >
-        Agregar Parte
+        + Agregar Parte
       </button>
     </div>
   )

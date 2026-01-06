@@ -38,18 +38,19 @@
 }
 
 .btn-edit {
-  background: #3b82f6;
+    background: linear-gradient(95deg, #203ee7, #081a0e);
   color: white;
 }
 
 .btn-delete {
   background: #c40303;
+  background: linear-gradient(95deg,#c40303,#081a0e);
   color: white;
 }
 
 .btn-add {
   margin-top: 1.5rem;
-  background: linear-gradient(95deg, #05441c, #029b3a);
+  background: linear-gradient(95deg, #076429, #081a0e);
   color: white;
   padding: 0.75rem;
   font-size: 1rem;

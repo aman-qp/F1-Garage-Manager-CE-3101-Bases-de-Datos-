@@ -5,8 +5,8 @@ import '../styles/usuarios.css'
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([
     { id: 1, nombre: 'Admin', rol: 'Administrador' },
-    { id: 2, nombre: 'Juan', rol: 'Jefe de Equipo' },
-    { id: 3, nombre: 'Ana', rol: 'Usuario' }
+    { id: 2, nombre: 'Juan', rol: 'Ingeniero' },
+    { id: 3, nombre: 'Ana', rol: 'Driver' }
   ])
 
   return (
@@ -52,7 +52,7 @@ export default function Usuarios() {
                   ])
                 }
               >
-                ➕ Agregar Usuario
+                + Agregar Usuario
               </button>
             </div>
           </div>

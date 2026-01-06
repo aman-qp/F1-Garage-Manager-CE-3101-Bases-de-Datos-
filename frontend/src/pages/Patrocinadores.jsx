@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import '../styles/usuarios.css'
 export default function Patrocinadores() {
   const [patrocinadores, setPatrocinadores] = useState([
     {
@@ -25,11 +25,11 @@ export default function Patrocinadores() {
     ])
   }
 
-  return (
-    <div>
-      <h2>Gestión de Patrocinadores</h2>
+ return (
+    <div className="usuarios-container">
+      <h2 className="view-title">Patrocinadores</h2>
 
-      <table border="1" cellPadding="8">
+      <table className="usuarios-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -46,18 +46,16 @@ export default function Patrocinadores() {
               <td>{p.nombre}</td>
               <td>{p.contacto}</td>
               <td>
-                <button>Editar</button>{' '}
-                <button>Eliminar</button>
+                <button className="btn btn-edit">Editar</button>{' '}
+                <button className="btn btn-delete">Eliminar</button>
               </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <br />
-
-      <button onClick={agregarPatrocinador}>
-        Agregar Patrocinador
+      <button className="btn btn-add" onClick={agregarPatrocinador}>
+        + Agregar Patrocinador
       </button>
     </div>
   )

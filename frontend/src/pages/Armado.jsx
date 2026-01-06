@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import '../styles/armado.css'
 
 export default function Armado() {
   const categorias = ['Motor', 'Aerodinámica', 'Neumáticos']
@@ -26,33 +27,50 @@ export default function Armado() {
     },
     { P: 0, A: 0, M: 0 }
   )
-
   return (
-    <div>
-      <h2>Armado de Carro</h2>
+    <div className="usuarios-container">
+      <div className="armado-grid">
+        {categorias.map(cat => (
+          <div key={cat} className="armado-slot">
+            <h3>{cat}</h3>
 
-      {categorias.map(cat => (
-        <div key={cat}>
-          <strong>{cat}:</strong>{' '}
-          <button
-            onClick={() =>
-              setPartesInstaladas({
-                ...partesInstaladas,
-                [cat]: partesDisponibles[cat]
-              })
-            }
-          >
-            Instalar {partesDisponibles[cat].nombre}
-          </button>
-        </div>
-      ))}
+            {partesInstaladas[cat] ? (
+              <div className="armado-installed">
+                <p className="installed-name">
+                  {partesInstaladas[cat].nombre}
+                </p>
+                <p>P {partesInstaladas[cat].P}</p>
+                <p>A {partesInstaladas[cat].A}</p>
+                <p>M {partesInstaladas[cat].M}</p>
+              </div>
+            ) : (
+              <p className="armado-empty">Sin instalar</p>
+            )}
 
-      <hr />
+            <button
+              className="btn btn-add"
+              onClick={() =>
+                setPartesInstaladas({
+                  ...partesInstaladas,
+                  [cat]: partesDisponibles[cat]
+                })
+              }
+            >
+              Instalar {partesDisponibles[cat].nombre}
+            </button>
+          </div>
+        ))}
+      </div>
 
+      <div className="armado-resumen">
       <h3>Resumen de Rendimiento</h3>
-      <p>P: {resumen.P}</p>
-      <p>A: {resumen.A}</p>
-      <p>M: {resumen.M}</p>
+
+      <div className="resumen-stats">
+        <span>Potencia (P): {resumen.P}</span>
+        <span>Aerodinámica (A): {resumen.A}</span>
+        <span>Manejo (M): {resumen.M}</span>
+      </div>
+    </div>
     </div>
   )
 }

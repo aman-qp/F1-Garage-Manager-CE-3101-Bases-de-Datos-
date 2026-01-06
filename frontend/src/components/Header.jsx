@@ -11,7 +11,7 @@ export default function Header() {
     '/patrocinadores': 'Patrocinadores',
     '/partes': 'Partes del Auto',
     '/inventario': 'Inventario',
-    '/armado': 'Armado del Monoplaza'
+    '/armado': 'Armado'
   }
 
   const title = titles[location.pathname] || 'F1 Garage Manager'

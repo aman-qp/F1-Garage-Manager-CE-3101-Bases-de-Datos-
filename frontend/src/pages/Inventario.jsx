@@ -1,5 +1,5 @@
 import { useState } from 'react'
-
+import '../styles/usuarios.css'
 export default function Inventario() {
   const [inventario] = useState([
     {
@@ -23,12 +23,13 @@ export default function Inventario() {
   ])
 
   return (
-    <div>
-      <h2>Inventario del Equipo</h2>
+    <div className="usuarios-container">
+      <h2 className="view-title">Inventario del Equipo</h2>
 
-      <table border="1" cellPadding="8">
+      <table className="usuarios-table">
         <thead>
           <tr>
+            <th>Equipo</th>
             <th>Parte</th>
             <th>Categoría</th>
             <th>Cantidad</th>
@@ -38,6 +39,7 @@ export default function Inventario() {
         <tbody>
           {inventario.map((item, index) => (
             <tr key={index}>
+              <td>{item.equipo}</td>
               <td>{item.parte}</td>
               <td>{item.categoria}</td>
               <td>{item.cantidad}</td>
