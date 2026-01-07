@@ -3,9 +3,6 @@
 USE F1GarageManager;
 GO
 
-PRINT 'Creando triggers...';
-GO
-
 -- TRIGGER 1: Solo usuarios Driver pueden ser Conductores
 
 CREATE OR ALTER TRIGGER trg_validar_conductor_driver
@@ -29,7 +26,7 @@ BEGIN
 END;
 GO
 
--- TRIGGER 2: Máximo 2 carros por equipo (multi-row safe)
+-- TRIGGER 2: Máximo 2 carros por equipo
 
 CREATE OR ALTER TRIGGER trg_max_2_carros_equipo
 ON CARRO
@@ -108,7 +105,7 @@ BEGIN
 END;
 GO
 
--- TRIGGER 5: Al instalar, debe haber inventario suficiente y se descuenta (multi-row)
+-- TRIGGER 5: Al instalar, debe haber inventario suficiente y se descuenta
 
 CREATE OR ALTER TRIGGER trg_instala_descuenta_inventario
 ON INSTALA
@@ -146,7 +143,7 @@ BEGIN
 END;
 GO
 
--- TRIGGER 6: Al desinstalar, la parte regresa al inventario (multi-row)
+-- TRIGGER 6: Al desinstalar, la parte regresa al inventario
 
 CREATE OR ALTER TRIGGER trg_instala_devuelve_inventario
 ON INSTALA

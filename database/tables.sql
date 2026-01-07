@@ -16,6 +16,7 @@ CREATE TABLE dbo.USUARIO (
     id_usuario      INT IDENTITY(1,1) PRIMARY KEY,
     id_equipo       INT NULL,                 -- Solo aplica si rol = Engineer
     nombre_usuario  VARCHAR(80) NOT NULL,
+    nombre_completo VARCHAR(100) NOT NULL,
     rol             VARCHAR(20) NOT NULL,
     contrasena_hash VARCHAR(255) NOT NULL,
 
@@ -34,9 +35,8 @@ CREATE TABLE dbo.USUARIO (
 GO
 
 CREATE TABLE dbo.CONDUCTOR (
-    id_usuario  INT PRIMARY KEY,     -- PK = FK a USUARIO (1:1)
+    id_usuario  INT PRIMARY KEY,  
     id_equipo   INT NOT NULL,
-    nombre      VARCHAR(100) NOT NULL,
     habilidad_h INT NOT NULL,
 
     CONSTRAINT CK_CONDUCTOR_habilidad CHECK (habilidad_h BETWEEN 0 AND 100),
@@ -57,9 +57,6 @@ CREATE TABLE dbo.CARRO (
 
     CONSTRAINT CK_CARRO_estado CHECK (estado IN ('Armando','Finalizado')),
 
-    -- Regla flexible:
-    -- Armando: puede tener o no conductor
-    -- Finalizado: DEBE tener conductor
     CONSTRAINT CK_CARRO_finalizado_conductor CHECK (
         estado = 'Armando' OR
         (estado = 'Finalizado' AND id_conductor IS NOT NULL)
@@ -71,7 +68,6 @@ CREATE TABLE dbo.CARRO (
     CONSTRAINT FK_CARRO_CONDUCTOR
         FOREIGN KEY (id_conductor) REFERENCES dbo.CONDUCTOR(id_usuario),
 
-    -- 1:1 (si lo mantienen): un conductor no puede estar en 2 carros
     CONSTRAINT UQ_CARRO_conductor UNIQUE (id_conductor)
 );
 GO
@@ -95,7 +91,7 @@ CREATE TABLE dbo.PATROCINADOR (
 );
 GO
 
--- Para poder asegurar que APORTA usa el mismo equipo del patrocinador (FK compuesta)
+-- Garantiza que el patrocinador esté aportando a su propio equipo
 ALTER TABLE dbo.PATROCINADOR
 ADD CONSTRAINT UQ_PATROCINADOR_idpat_ideq UNIQUE (id_patrocinador, id_equipo);
 GO
@@ -166,7 +162,7 @@ CREATE TABLE dbo.PARTE (
 );
 GO
 
--- Para poder imponer “la parte es de la categoría” desde INSTALA con FK compuesta
+-- la parte instalada corresponde a esa categoría
 ALTER TABLE dbo.PARTE
 ADD CONSTRAINT UQ_PARTE_idpar_idcat UNIQUE (id_parte, id_categoria);
 GO
@@ -178,6 +174,7 @@ CREATE TABLE dbo.TIENE (
     cantidad        INT NOT NULL,
     fecha_adquirido DATE NULL,
 
+    -- en el inventario de un equipo, una parte aparece una vez, solo se aunmenta cantidad
     CONSTRAINT PK_TIENE PRIMARY KEY (id_equipo, id_parte),
     CONSTRAINT CK_TIENE_cantidad CHECK (cantidad >= 0),
 
@@ -211,8 +208,11 @@ CREATE TABLE dbo.COMPRA_DE (
     precio_unitario DECIMAL(12,2) NOT NULL,
     cantidad        INT NOT NULL,
 
+    -- en una compra una parte aparece una vez, solo aunmentando cantidad
     CONSTRAINT PK_COMPRA_DE PRIMARY KEY (id_compra, id_parte),
+
     CONSTRAINT CK_COMPRA_DE_precio CHECK (precio_unitario >= 0),
+
     CONSTRAINT CK_COMPRA_DE_cantidad CHECK (cantidad > 0),
 
     CONSTRAINT FK_COMPRA_DE_COMPRA
@@ -232,7 +232,7 @@ CREATE TABLE dbo.CIRCUITO (
     cantidad_curvas INT NOT NULL,
 
     CONSTRAINT UQ_CIRCUITO_nombre UNIQUE (nombre),
-    CONSTRAINT CK_CIRCUITO_dist CHECK (distancia_total >= 0),
+    CONSTRAINT CK_CIRCUITO_dist CHECK (distancia_total > 0),
     CONSTRAINT CK_CIRCUITO_curvas CHECK (cantidad_curvas >= 0)
 );
 GO
@@ -250,7 +250,7 @@ CREATE TABLE dbo.SIMULACION (
 );
 GO
 
--- 1 fila por (simulación, carro) + snapshot para análisis
+
 CREATE TABLE dbo.RESULTADO (
     id_simulacion INT NOT NULL,
     id_carro      INT NOT NULL,
@@ -283,6 +283,7 @@ CREATE TABLE dbo.RESULTADO (
     CONSTRAINT FK_RESULTADO_CONDUCTOR
         FOREIGN KEY (id_conductor) REFERENCES dbo.CONDUCTOR(id_usuario),
 
+    -- no pueden existir dos carros con la misma posición
     CONSTRAINT UQ_RESULTADO_sim_pos UNIQUE (id_simulacion, posicion)
 );
 GO
@@ -302,15 +303,15 @@ CREATE TABLE dbo.INSTALA (
     CONSTRAINT FK_INSTALA_CATEGORIA
         FOREIGN KEY (id_categoria) REFERENCES dbo.CATEGORIA(id_categoria),
 
-    -- Carro pertenece al equipo (evita ambigüedad)
+    -- Carro pertenece al equipo
     CONSTRAINT FK_INSTALA_CARRO_EQUIPO
         FOREIGN KEY (id_carro, id_equipo) REFERENCES dbo.CARRO(id_carro, id_equipo),
 
-    -- Parte debe ser de esa categoría (evita inconsistencias)
+    -- Parte debe ser de esa categoría 
     CONSTRAINT FK_INSTALA_PARTE_CATEGORIA
         FOREIGN KEY (id_parte, id_categoria) REFERENCES dbo.PARTE(id_parte, id_categoria),
 
-    -- Instalación apoyada explícitamente en inventario del equipo (lo que dijo el profe)
+    -- Para instalar una parte, esa parte debe existir en el inventario del equipo (TIENE).
     CONSTRAINT FK_INSTALA_TIENE
         FOREIGN KEY (id_equipo, id_parte) REFERENCES dbo.TIENE(id_equipo, id_parte)
 );
