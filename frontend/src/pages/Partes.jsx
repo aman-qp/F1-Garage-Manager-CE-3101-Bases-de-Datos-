@@ -4,23 +4,23 @@ export default function Partes() {
   const [partes, setPartes] = useState([
     {
       id: 1,
-      nombre: 'Motor V8',
-      categoria: 'Motor',
+      nombre: 'Caja de Cambios V8',
+      categoria: 'Caja de Cambios',
       precio: 500000,
       stock: 5,
-      P: 80,
-      A: 60,
-      M: 40
+      P: 8,
+      A: 6,
+      M: 4
     },
     {
       id: 2,
       nombre: 'Alerón Pro',
-      categoria: 'Aerodinámica',
+      categoria: 'Paquete aerodinámico',
       precio: 250000,
       stock: 8,
-      P: 40,
-      A: 85,
-      M: 30
+      P: 4,
+      A: 8,
+      M: 3
     },
     {
       id: 3,
@@ -28,9 +28,9 @@ export default function Partes() {
       categoria: 'Neumáticos',
       precio: 180000,
       stock: 12,
-      P: 30,
-      A: 40,
-      M: 90
+      P: 3,
+      A: 4,
+      M: 9
     }
   ])
 

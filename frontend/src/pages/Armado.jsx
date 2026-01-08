@@ -2,18 +2,22 @@ import { useState } from 'react'
 import '../styles/armado.css'
 
 export default function Armado() {
-  const categorias = ['Motor', 'Aerodinámica', 'Neumáticos']
+  const categorias = ['Caja_de_Cambios', 'Paquete_aerodinámico', 'Neumáticos', 'Suspensión','Unidad_de_Potencia']
 
   const [partesInstaladas, setPartesInstaladas] = useState({
-    Motor: null,
-    Aerodinámica: null,
-    Neumáticos: null
+    Caja_de_Cambios: null,
+    Paquete_aerodinámico: null,
+    Neumáticos: null,
+    Suspensión: null,
+    Unidad_de_Potencia: null
   })
 
   const partesDisponibles = {
-    Motor: { nombre: 'Motor V8', P: 80, A: 60, M: 40 },
-    Aerodinámica: { nombre: 'Alerón Pro', P: 40, A: 85, M: 30 },
-    Neumáticos: { nombre: 'Neumáticos Soft', P: 30, A: 40, M: 90 }
+    Caja_de_Cambios: { nombre: 'Caja de Cambios V8', P: 8, A: 6, M: 4 },
+    Paquete_aerodinámico: { nombre: 'Alerón Pro', P: 4, A: 8, M: 3 },
+    Neumáticos: { nombre: 'Neumáticos Soft', P: 3, A: 4, M: 9 },
+    Suspensión: { nombre: 'Suspensión Avanzada', P: 5, A: 5, M: 7 },
+    Unidad_de_Potencia: { nombre: 'Unidad de Potencia X', P: 9, A: 3, M: 5 }
   }
 
   const resumen = Object.values(partesInstaladas).reduce(
@@ -56,7 +60,7 @@ export default function Armado() {
                 })
               }
             >
-              Instalar {partesDisponibles[cat].nombre}
+              Instalar: {partesDisponibles[cat].nombre}
             </button>
           </div>
         ))}

@@ -4,14 +4,14 @@ export default function Inventario() {
   const [inventario] = useState([
     {
       equipo: 'Equipo Rojo',
-      parte: 'Motor V8',
-      categoria: 'Motor',
+      parte: 'Caja de Cambios V8',
+      categoria: 'Caja de Cambios',
       cantidad: 1
     },
     {
       equipo: 'Equipo Rojo',
       parte: 'Alerón Pro',
-      categoria: 'Aerodinámica',
+      categoria: 'Paquete aerodinámico',
       cantidad: 1
     },
     {
