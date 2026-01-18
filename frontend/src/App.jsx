@@ -10,6 +10,7 @@ import Partes from './pages/Partes'
 import Inventario from './pages/Inventario'
 import Armado from './pages/Armado'
 import Presupuesto from './pages/Presupuesto'
+import Tienda from './pages/Tienda'
 
 export default function App() {
   const { isAuthenticated, usuario, loading, logout } = useAuth();
@@ -54,6 +55,7 @@ export default function App() {
           <Link to="/conductores">Conductores</Link> |{' '}
           <Link to="/patrocinadores">Patrocinadores</Link> |{' '}
           <Link to="/presupuesto">Presupuesto</Link> |{' '}
+          <Link to="/tienda">Tienda</Link> |{' '}  {/* ← AGREGAR ESTE LINK */}
           <Link to="/partes">Partes</Link> |{' '}
           <Link to="/inventario">Inventario</Link> |{' '}
           <Link to="/armado">Armado</Link>
@@ -87,6 +89,7 @@ export default function App() {
         <Route path="/conductores" element={<Conductores />} />
         <Route path="/patrocinadores" element={<Patrocinadores />} />
         <Route path="/presupuesto" element={<Presupuesto />} />
+        <Route path="/tienda" element={<Tienda />} />  {/* ← AGREGAR ESTA RUTA */}
         <Route path="/partes" element={<Partes />} />
         <Route path="/inventario" element={<Inventario />} />
         <Route path="/armado" element={<Armado />} />

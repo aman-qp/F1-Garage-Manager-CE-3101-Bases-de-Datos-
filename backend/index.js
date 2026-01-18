@@ -368,17 +368,191 @@ app.get('/api/aportes/:id_equipo', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
-
 // =============================================
-// RUTAS DE COMPRAS (Ya las tienes, pero agregar autorización)
+// RUTA DE CATÁLOGO DE PARTES (ADMIN)
 // =============================================
 
-// Crear compra
-app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
+// GET /api/partes - Obtener todas las partes del catálogo
+app.get('/api/partes', async (req, res) => {
   try {
-    const { id_equipo } = req.body;
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .query(`
+        SELECT 
+          p.id_parte,
+          p.nombre,
+          c.tipo_de_parte as categoria,
+          p.precio_catalogo as precio,
+          p.stock,
+          p.potencia as P,
+          p.aerodinamica as A,
+          p.manejo as M
+        FROM dbo.PARTE p
+        JOIN dbo.CATEGORIA c ON c.id_categoria = p.id_categoria
+        ORDER BY c.tipo_de_parte, p.nombre
+      `);
+    
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener partes:', err);
+    res.status(500).json({ message: 'Error al obtener catálogo de partes' });
+  }
+});
 
-    // Engineer solo puede comprar para su equipo
+// POST /api/partes - Crear nueva parte
+app.post('/api/partes', requireRole('Admin'), async (req, res) => {
+  try {
+    const { nombre, id_categoria, potencia, aerodinamica, manejo, precio_catalogo, stock } = req.body;
+
+    // Validaciones
+    if (!nombre || !id_categoria || potencia === undefined || aerodinamica === undefined || 
+        manejo === undefined || !precio_catalogo || stock === undefined) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
+    }
+
+    if (potencia < 0 || potencia > 9 || aerodinamica < 0 || aerodinamica > 9 || 
+        manejo < 0 || manejo > 9) {
+      return res.status(400).json({ message: 'P, A y M deben estar entre 0 y 9' });
+    }
+
+    if (id_categoria < 1 || id_categoria > 5) {
+      return res.status(400).json({ message: 'Categoría debe estar entre 1 y 5' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('nombre', sql.VarChar(120), nombre)
+      .input('id_categoria', sql.Int, id_categoria)
+      .input('potencia', sql.Int, potencia)
+      .input('aerodinamica', sql.Int, aerodinamica)
+      .input('manejo', sql.Int, manejo)
+      .input('precio_catalogo', sql.Decimal(12, 2), precio_catalogo)
+      .input('stock', sql.Int, stock)
+      .query(`
+        INSERT INTO dbo.PARTE (nombre, id_categoria, potencia, aerodinamica, manejo, precio_catalogo, stock)
+        VALUES (@nombre, @id_categoria, @potencia, @aerodinamica, @manejo, @precio_catalogo, @stock);
+        SELECT SCOPE_IDENTITY() as id_parte;
+      `);
+
+    res.status(201).json({ 
+      message: 'Parte creada exitosamente',
+      id_parte: result.recordset[0].id_parte 
+    });
+  } catch (err) {
+    console.error('Error al crear parte:', err);
+    res.status(500).json({ message: 'Error al crear parte' });
+  }
+});
+
+// PUT /api/partes/:id - Actualizar parte
+app.put('/api/partes/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre, id_categoria, potencia, aerodinamica, manejo, precio_catalogo, stock } = req.body;
+
+    // Validaciones
+    if (potencia < 0 || potencia > 9 || aerodinamica < 0 || aerodinamica > 9 || 
+        manejo < 0 || manejo > 9) {
+      return res.status(400).json({ message: 'P, A y M deben estar entre 0 y 9' });
+    }
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_parte', sql.Int, id)
+      .input('nombre', sql.VarChar(120), nombre)
+      .input('id_categoria', sql.Int, id_categoria)
+      .input('potencia', sql.Int, potencia)
+      .input('aerodinamica', sql.Int, aerodinamica)
+      .input('manejo', sql.Int, manejo)
+      .input('precio_catalogo', sql.Decimal(12, 2), precio_catalogo)
+      .input('stock', sql.Int, stock)
+      .query(`
+        UPDATE dbo.PARTE
+        SET nombre = @nombre,
+            id_categoria = @id_categoria,
+            potencia = @potencia,
+            aerodinamica = @aerodinamica,
+            manejo = @manejo,
+            precio_catalogo = @precio_catalogo,
+            stock = @stock
+        WHERE id_parte = @id_parte
+      `);
+
+    res.json({ message: 'Parte actualizada exitosamente' });
+  } catch (err) {
+    console.error('Error al actualizar parte:', err);
+    res.status(500).json({ message: 'Error al actualizar parte' });
+  }
+});
+
+// DELETE /api/partes/:id - Eliminar parte
+app.delete('/api/partes/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_parte', sql.Int, id)
+      .query('DELETE FROM dbo.PARTE WHERE id_parte = @id_parte');
+
+    res.json({ message: 'Parte eliminada exitosamente' });
+  } catch (err) {
+    console.error('Error al eliminar parte:', err);
+    if (err.message.includes('REFERENCE constraint')) {
+      return res.status(400).json({ 
+        message: 'No se puede eliminar: la parte está siendo usada en inventarios o instalaciones' 
+      });
+    }
+    res.status(500).json({ message: 'Error al eliminar parte' });
+  }
+});
+
+// DELETE /api/partes/:id - Eliminar parte
+app.delete('/api/partes/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_parte', sql.Int, id)
+      .query('DELETE FROM dbo.PARTE WHERE id_parte = @id_parte');
+
+    res.json({ message: 'Parte eliminada exitosamente' });
+  } catch (err) {
+    console.error('Error al eliminar parte:', err);
+    if (err.message.includes('REFERENCE constraint')) {
+      return res.status(400).json({ 
+        message: 'No se puede eliminar: la parte está siendo usada en inventarios o instalaciones' 
+      });
+    }
+    res.status(500).json({ message: 'Error al eliminar parte' });
+  }
+});
+
+// GET /api/categorias - Obtener categorías (para el formulario)
+app.get('/api/categorias', async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .query('SELECT id_categoria, tipo_de_parte FROM dbo.CATEGORIA ORDER BY id_categoria');
+    
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al obtener categorías:', err);
+    res.status(500).json({ message: 'Error al obtener categorías' });
+  }
+});
+
+// =============================================
+// RUTAS DE COMPRAS E INVENTARIO
+// =============================================
+
+// GET /api/inventario/:id_equipo - Obtener inventario de un equipo
+app.get('/api/inventario/:id_equipo', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const { id_equipo } = req.params;
+    
+    // Engineer solo puede ver su propio inventario
     if (req.session.rol === 'Engineer' && req.session.id_equipo != id_equipo) {
       return res.status(403).json({ message: 'Acceso denegado' });
     }
@@ -386,67 +560,137 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
     const pool = await poolPromise;
     const result = await pool.request()
       .input('id_equipo', sql.Int, id_equipo)
-      .output('id_compra', sql.Int)
-      .execute('sp_compra_crear');
-
-    const newId = result.output.id_compra;
-
-    res.status(201).json({ id_compra: newId, id_equipo });
+      .query(`
+        SELECT 
+          t.id_equipo,
+          t.id_parte,
+          pa.nombre as nombre_parte,
+          c.tipo_de_parte as categoria,
+          t.cantidad,
+          t.fecha_adquirido as fecha_adquisicion,
+          pa.potencia as p,
+          pa.aerodinamica as a,
+          pa.manejo as m
+        FROM dbo.TIENE t
+        JOIN dbo.PARTE pa ON pa.id_parte = t.id_parte
+        JOIN dbo.CATEGORIA c ON c.id_categoria = pa.id_categoria
+        WHERE t.id_equipo = @id_equipo
+          AND t.cantidad > 0
+        ORDER BY c.tipo_de_parte, pa.nombre
+      `);
+    
+    res.json(result.recordset);
   } catch (err) {
-    console.error('Error al crear compra:', err);
-    res.status(500).json({ message: 'Error interno del servidor' });
+    console.error('Error al obtener inventario:', err);
+    res.status(500).json({ message: 'Error al obtener inventario' });
   }
 });
 
-// Agregar item a compra
-app.post('/api/compras/:id/items', requireRole('Admin', 'Engineer'), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { id_parte, cantidad } = req.body;
+// POST /api/compras - Flujo completo de compra (crear + agregar + confirmar)
+app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
+  const { id_equipo, id_parte, cantidad } = req.body;
 
-    if (!id_parte || !cantidad) {
-      return res.status(400).json({ message: 'Faltan campos requeridos' });
+  // Validaciones básicas
+  if (!id_equipo || !id_parte || !cantidad) {
+    return res.status(400).json({ 
+      message: 'Faltan datos: id_equipo, id_parte y cantidad son obligatorios' 
+    });
+  }
+
+  if (cantidad <= 0) {
+    return res.status(400).json({ message: 'La cantidad debe ser mayor a 0' });
+  }
+
+  // Engineer solo puede comprar para su equipo
+  if (req.session.rol === 'Engineer' && req.session.id_equipo != id_equipo) {
+    return res.status(403).json({ message: 'Acceso denegado' });
+  }
+
+  let transaction;
+
+  try {
+    const pool = await poolPromise;
+    transaction = new sql.Transaction(pool);
+    await transaction.begin();
+
+    // PASO 1: Crear compra vacía
+    const crearResult = await transaction.request()
+      .input('id_equipo', sql.Int, id_equipo)
+      .output('id_compra', sql.Int)
+      .execute('dbo.sp_compra_crear');
+
+    const id_compra = crearResult.output.id_compra;
+
+    if (!id_compra) {
+      await transaction.rollback();
+      return res.status(500).json({ message: 'Error al crear la compra' });
     }
 
-    const pool = await poolPromise;
-    await pool.request()
-      .input('id_compra', sql.Int, id)
+    // PASO 2: Agregar item al carrito
+    await transaction.request()
+      .input('id_compra', sql.Int, id_compra)
       .input('id_parte', sql.Int, id_parte)
       .input('cantidad', sql.Int, cantidad)
-      .execute('sp_compra_agregar_item');
+      .execute('dbo.sp_compra_agregar_item');
 
-    res.json({ message: 'Item agregado exitosamente' });
+    // PASO 3: Confirmar compra (valida presupuesto, stock, actualiza todo)
+    const confirmarResult = await transaction.request()
+      .input('id_compra', sql.Int, id_compra)
+      .execute('dbo.sp_compra_confirmar');
+
+    await transaction.commit();
+
+    // Obtener detalles de la compra confirmada
+    const resumen = confirmarResult.recordset[0];
+
+    res.json({
+      success: true,
+      message: 'Compra realizada exitosamente',
+      compra: {
+        id_compra: resumen.id_compra,
+        id_equipo: resumen.id_equipo,
+        precio_total: resumen.precio_total
+      }
+    });
+
   } catch (err) {
-    console.error('Error al agregar item:', err);
-    res.status(500).json({ message: 'Error interno del servidor' });
-  }
-});
+    if (transaction) {
+      try {
+        await transaction.rollback();
+      } catch (rollbackErr) {
+        console.error('Error al hacer rollback:', rollbackErr);
+      }
+    }
 
-// Confirmar compra
-app.post('/api/compras/:id/confirmar', requireRole('Admin', 'Engineer'), async (req, res) => {
-  try {
-    const { id } = req.params;
+    console.error('Error en compra:', err);
 
-    const pool = await poolPromise;
-    const result = await pool.request()
-      .input('id_compra', sql.Int, id)
-      .execute('sp_compra_confirmar');
-
-    res.json(result.recordset[0]);
-  } catch (err) {
-    console.error('Error al confirmar compra:', err);
-    
+    // Manejar errores específicos de los stored procedures
     if (err.message && err.message.includes('Presupuesto insuficiente')) {
-      return res.status(400).json({ message: 'Presupuesto insuficiente' });
-    }
-    if (err.message && err.message.includes('Stock insuficiente')) {
-      return res.status(400).json({ message: 'Stock insuficiente en una o más partes' });
+      return res.status(400).json({ 
+        message: 'Presupuesto insuficiente para completar la compra' 
+      });
     }
     
-    res.status(500).json({ message: 'Error interno del servidor' });
+    if (err.message && err.message.includes('Stock insuficiente')) {
+      return res.status(400).json({ 
+        message: 'Stock insuficiente en el catálogo' 
+      });
+    }
+
+    if (err.message && err.message.includes('El equipo no existe')) {
+      return res.status(404).json({ message: 'El equipo no existe' });
+    }
+
+    if (err.message && err.message.includes('La parte no existe')) {
+      return res.status(404).json({ message: 'La parte no existe' });
+    }
+
+    res.status(500).json({ 
+      message: 'Error al procesar la compra',
+      error: err.message 
+    });
   }
 });
-
 // Ejecutar seed automático en primer inicio
 (async () => {
   try {
