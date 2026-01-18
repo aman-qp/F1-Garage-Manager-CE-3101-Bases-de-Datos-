@@ -369,29 +369,16 @@ app.get('/api/aportes/:id_equipo', requireAuth, async (req, res) => {
   }
 });
 // =============================================
-// RUTA DE CATÁLOGO DE PARTES (ADMIN)
+// RUTA DE CATÁLOGO DE PARTES (ADMIN) - CON SP
 // =============================================
 
-// GET /api/partes - Obtener todas las partes del catálogo
+// GET /api/partes
 app.get('/api/partes', async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool.request()
-      .query(`
-        SELECT 
-          p.id_parte,
-          p.nombre,
-          c.tipo_de_parte as categoria,
-          p.precio_catalogo as precio,
-          p.stock,
-          p.potencia as P,
-          p.aerodinamica as A,
-          p.manejo as M
-        FROM dbo.PARTE p
-        JOIN dbo.CATEGORIA c ON c.id_categoria = p.id_categoria
-        ORDER BY c.tipo_de_parte, p.nombre
-      `);
-    
+      .execute('dbo.SP_Partes_Listar');
+
     res.json(result.recordset);
   } catch (err) {
     console.error('Error al obtener partes:', err);
@@ -399,25 +386,10 @@ app.get('/api/partes', async (req, res) => {
   }
 });
 
-// POST /api/partes - Crear nueva parte
+// POST /api/partes
 app.post('/api/partes', requireRole('Admin'), async (req, res) => {
   try {
     const { nombre, id_categoria, potencia, aerodinamica, manejo, precio_catalogo, stock } = req.body;
-
-    // Validaciones
-    if (!nombre || !id_categoria || potencia === undefined || aerodinamica === undefined || 
-        manejo === undefined || !precio_catalogo || stock === undefined) {
-      return res.status(400).json({ message: 'Faltan campos requeridos' });
-    }
-
-    if (potencia < 0 || potencia > 9 || aerodinamica < 0 || aerodinamica > 9 || 
-        manejo < 0 || manejo > 9) {
-      return res.status(400).json({ message: 'P, A y M deben estar entre 0 y 9' });
-    }
-
-    if (id_categoria < 1 || id_categoria > 5) {
-      return res.status(400).json({ message: 'Categoría debe estar entre 1 y 5' });
-    }
 
     const pool = await poolPromise;
     const result = await pool.request()
@@ -426,17 +398,13 @@ app.post('/api/partes', requireRole('Admin'), async (req, res) => {
       .input('potencia', sql.Int, potencia)
       .input('aerodinamica', sql.Int, aerodinamica)
       .input('manejo', sql.Int, manejo)
-      .input('precio_catalogo', sql.Decimal(12, 2), precio_catalogo)
+      .input('precio_catalogo', sql.Decimal(12,2), precio_catalogo)
       .input('stock', sql.Int, stock)
-      .query(`
-        INSERT INTO dbo.PARTE (nombre, id_categoria, potencia, aerodinamica, manejo, precio_catalogo, stock)
-        VALUES (@nombre, @id_categoria, @potencia, @aerodinamica, @manejo, @precio_catalogo, @stock);
-        SELECT SCOPE_IDENTITY() as id_parte;
-      `);
+      .execute('dbo.SP_Partes_Insertar');
 
-    res.status(201).json({ 
+    res.status(201).json({
       message: 'Parte creada exitosamente',
-      id_parte: result.recordset[0].id_parte 
+      id_parte: result.recordset[0].id_parte
     });
   } catch (err) {
     console.error('Error al crear parte:', err);
@@ -444,17 +412,11 @@ app.post('/api/partes', requireRole('Admin'), async (req, res) => {
   }
 });
 
-// PUT /api/partes/:id - Actualizar parte
+// PUT /api/partes/:id
 app.put('/api/partes/:id', requireRole('Admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { nombre, id_categoria, potencia, aerodinamica, manejo, precio_catalogo, stock } = req.body;
-
-    // Validaciones
-    if (potencia < 0 || potencia > 9 || aerodinamica < 0 || aerodinamica > 9 || 
-        manejo < 0 || manejo > 9) {
-      return res.status(400).json({ message: 'P, A y M deben estar entre 0 y 9' });
-    }
 
     const pool = await poolPromise;
     await pool.request()
@@ -464,19 +426,9 @@ app.put('/api/partes/:id', requireRole('Admin'), async (req, res) => {
       .input('potencia', sql.Int, potencia)
       .input('aerodinamica', sql.Int, aerodinamica)
       .input('manejo', sql.Int, manejo)
-      .input('precio_catalogo', sql.Decimal(12, 2), precio_catalogo)
+      .input('precio_catalogo', sql.Decimal(12,2), precio_catalogo)
       .input('stock', sql.Int, stock)
-      .query(`
-        UPDATE dbo.PARTE
-        SET nombre = @nombre,
-            id_categoria = @id_categoria,
-            potencia = @potencia,
-            aerodinamica = @aerodinamica,
-            manejo = @manejo,
-            precio_catalogo = @precio_catalogo,
-            stock = @stock
-        WHERE id_parte = @id_parte
-      `);
+      .execute('dbo.SP_Partes_Actualizar');
 
     res.json({ message: 'Parte actualizada exitosamente' });
   } catch (err) {
@@ -485,7 +437,7 @@ app.put('/api/partes/:id', requireRole('Admin'), async (req, res) => {
   }
 });
 
-// DELETE /api/partes/:id - Eliminar parte
+// DELETE /api/partes/:id
 app.delete('/api/partes/:id', requireRole('Admin'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -493,55 +445,34 @@ app.delete('/api/partes/:id', requireRole('Admin'), async (req, res) => {
     const pool = await poolPromise;
     await pool.request()
       .input('id_parte', sql.Int, id)
-      .query('DELETE FROM dbo.PARTE WHERE id_parte = @id_parte');
+      .execute('dbo.SP_Partes_Eliminar');
 
     res.json({ message: 'Parte eliminada exitosamente' });
   } catch (err) {
     console.error('Error al eliminar parte:', err);
-    if (err.message.includes('REFERENCE constraint')) {
-      return res.status(400).json({ 
-        message: 'No se puede eliminar: la parte está siendo usada en inventarios o instalaciones' 
+    if (err.message.includes('REFERENCE')) {
+      return res.status(400).json({
+        message: 'No se puede eliminar: la parte está en uso'
       });
     }
     res.status(500).json({ message: 'Error al eliminar parte' });
   }
 });
 
-// DELETE /api/partes/:id - Eliminar parte
-app.delete('/api/partes/:id', requireRole('Admin'), async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const pool = await poolPromise;
-    await pool.request()
-      .input('id_parte', sql.Int, id)
-      .query('DELETE FROM dbo.PARTE WHERE id_parte = @id_parte');
-
-    res.json({ message: 'Parte eliminada exitosamente' });
-  } catch (err) {
-    console.error('Error al eliminar parte:', err);
-    if (err.message.includes('REFERENCE constraint')) {
-      return res.status(400).json({ 
-        message: 'No se puede eliminar: la parte está siendo usada en inventarios o instalaciones' 
-      });
-    }
-    res.status(500).json({ message: 'Error al eliminar parte' });
-  }
-});
-
-// GET /api/categorias - Obtener categorías (para el formulario)
+// GET /api/categorias
 app.get('/api/categorias', async (req, res) => {
   try {
     const pool = await poolPromise;
     const result = await pool.request()
-      .query('SELECT id_categoria, tipo_de_parte FROM dbo.CATEGORIA ORDER BY id_categoria');
-    
+      .execute('dbo.SP_Categorias_Listar');
+
     res.json(result.recordset);
   } catch (err) {
     console.error('Error al obtener categorías:', err);
     res.status(500).json({ message: 'Error al obtener categorías' });
   }
 });
+
 
 // =============================================
 // RUTAS DE COMPRAS E INVENTARIO
