@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import Header from '../components/Header'
 import '../styles/usuarios.css'
 
 export default function Usuarios() {
@@ -17,62 +16,80 @@ export default function Usuarios() {
     const { name, value } = e.target
     setForm(prev => ({ ...prev, [name]: value }))
   }
-
   async function handleSubmit(e) {
-    e.preventDefault()
-    if (!form.username || !form.fullName || !form.password || !form.rol) return
+  e.preventDefault()
 
-    const payload = {
-      nombre_usuario: form.username,
-      nombre_completo: form.fullName,
-      contrasena: form.password,
-      rol: form.rol
-    }
-
-    if (form.rol === 'Engineer') {
-      if (!form.id_equipo) {
-        alert('id_equipo es requerido para rol Engineer')
-        return
-      }
-      payload.id_equipo = Number(form.id_equipo)
-    }
-
-    try {
-      const res = await fetch('http://localhost:3001/api/usuarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      if (res.status === 409) {
-        const data = await res.json()
-        alert(data.message || 'El nombre de usuario ya existe')
-        return
-      }
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        alert(data.message || 'Error al registrar usuario')
-        return
-      }
-
-      const created = await res.json()
-      setUsuarios(prev => [
-        ...prev,
-        { id: created.id, nombre: created.nombre_usuario || form.username, nombreCompleto: created.nombre_completo || form.fullName, rol: created.rol }
-      ])
-
-      setForm({ username: '', fullName: '', password: '', rol: '', id_equipo: '' })
-      setModalOpen(false)
-    } catch (err) {
-      console.error(err)
-      alert('No se pudo conectar con la API')
-    }
+  // 1. Validación básica
+  if (!form.username || !form.fullName || !form.password || !form.rol) {
+    alert('Todos los campos son obligatorios')
+    return
   }
+
+  // 2. Validación específica por rol
+  if (form.rol === 'Engineer' && !form.id_equipo) {
+    alert('El Ingeniero debe tener un equipo asignado')
+    return
+  }
+
+  // 3. Payload limpio
+  const payload = {
+    nombre_usuario: form.username.trim(),
+    nombre_completo: form.fullName.trim(),
+    contrasena: form.password,
+    rol: form.rol,
+    id_equipo: form.id_equipo ? Number(form.id_equipo) : null
+  }
+
+  try {
+    const res = await fetch('http://localhost:3001/api/usuarios', {
+      method: 'POST',
+      credentials: 'include', // 🔴 MUY IMPORTANTE
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      alert(data.message || 'Error al crear usuario')
+      return
+    }
+
+    // 4. Agregar a la tabla
+    setUsuarios(prev => [
+      ...prev,
+      {
+        id: data.id,
+        nombre: data.nombre_usuario,
+        nombreCompleto: data.nombre_completo,
+        rol: data.rol
+      }
+    ])
+
+    // 5. Limpiar formulario y cerrar modal
+    setForm({
+      username: '',
+      fullName: '',
+      password: '',
+      rol: '',
+      id_equipo: ''
+    })
+
+    setModalOpen(false)
+
+    alert('Usuario creado correctamente. Ya puede iniciar sesión.')
+
+  } catch (err) {
+    console.error(err)
+    alert('No se pudo conectar con el servidor')
+  }
+}
 
   return (
     <div>
-      <Header />
+      
 
       <div className="usuarios-container">
         <table className="usuarios-table">
@@ -142,8 +159,13 @@ export default function Usuarios() {
 
                 <label>
                   Rol
-                  <input name="rol" value={form.rol} onChange={handleChange} required />
+                  <select name="rol" value={form.rol} onChange={handleChange} required>
+                    <option value="">Seleccione un rol</option>
+                    <option value="Engineer">Ingeniero</option>
+                    <option value="Driver">Conductor</option>
+                  </select>
                 </label>
+
 
                 {form.rol === 'Engineer' && (
                   <label>

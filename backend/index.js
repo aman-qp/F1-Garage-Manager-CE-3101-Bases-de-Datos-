@@ -83,26 +83,29 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ message: 'Credenciales inválidas' });
     }
 
-    // Crear sesión
-    req.session.userId = usuario.id_usuario;
-    req.session.rol = usuario.rol;
-    req.session.nombre_usuario = usuario.nombre_usuario;
-    req.session.id_equipo = usuario.id_equipo;
+   // Crear sesión
+req.session.userId = usuario.id_usuario;
+req.session.rol = usuario.rol;
+req.session.nombre_usuario = usuario.nombre_usuario;
+req.session.id_equipo = usuario.id_equipo;
 
-    res.json({
-      message: 'Login exitoso',
-      usuario: {
-        id: usuario.id_usuario,
-        nombre_usuario: usuario.nombre_usuario,
-        nombre_completo: usuario.nombre_completo,
-        rol: usuario.rol,
-        id_equipo: usuario.id_equipo
-      }
-    });
-  } catch (err) {
-    console.error('Error en login:', err);
-    res.status(500).json({ message: 'Error interno del servidor' });
+// guarda la sesion
+req.session.save(err => {
+  if (err) {
+    console.error('Error al guardar sesión:', err);
+    return res.status(500).json({ message: 'Error al crear sesión' });
   }
+
+  res.json({
+    message: 'Login exitoso',
+    usuario: {
+      id: usuario.id_usuario,
+      nombre_usuario: usuario.nombre_usuario,
+      nombre_completo: usuario.nombre_completo,
+      rol: usuario.rol,
+      id_equipo: usuario.id_equipo
+    }
+  });
 });
 
 // Logout
@@ -188,6 +191,32 @@ app.get('/api/usuarios', requireRole('Admin'), async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+// ===============================
+// PERFIL DEL CONDUCTOR (DRIVER)
+// ===============================
+app.get('/api/conductor/me', requireRole('Driver'), (req, res) => {
+  try {
+    // Validación extra por seguridad
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({ message: 'No autenticado' });
+    }
+
+    // Respuesta usando SOLO sesión (sin DB)
+    return res.json({
+      id: req.session.userId,
+      nombre: req.session.nombre_usuario,
+      rol: req.session.rol,
+      id_equipo: req.session.id_equipo ?? null,
+      habilidad: 75,        // Dummy
+      historial: []         // Dummy
+    });
+
+  } catch (error) {
+    console.error('Error perfil conductor:', error);
+    res.status(500).json({ message: 'Error al obtener perfil del conductor' });
+  }
+});
+
 
 // =============================================
 // RUTAS DE EQUIPOS

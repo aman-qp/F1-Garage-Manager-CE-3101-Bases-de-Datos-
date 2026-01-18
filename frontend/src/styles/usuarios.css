@@ -105,3 +105,19 @@
   gap: 0.5rem;
   margin-top: 0.5rem;
 }
+.user-form select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #0f0f0f;
+  color: #fff;
+  font-size: 0.95rem;
+  appearance: none;          /* elimina estilo nativo */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  cursor: pointer;
+}
+
