@@ -56,9 +56,15 @@ export default function App() {
             </>
           )}
           
-          <Link to="/equipos">Equipos</Link> |{' '}
-          <Link to="/conductores">Conductores</Link> |{' '}
+          {/* Admin y Engineer pueden ver Equipos */}
+          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+            <>
+              <Link to="/equipos">Equipos</Link> |{' '}
+            </>
+          )}
           
+          {/* Todos pueden ver Conductores */}
+          <Link to="/conductores">Conductores</Link> |{' '}
           
           {/* Engineer y Admin pueden ver Presupuesto */}
           {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
@@ -81,8 +87,19 @@ export default function App() {
             </>
           )}
           
-          <Link to="/inventario">Inventario</Link> |{' '}
-          <Link to="/armado">Armado</Link>
+          {/* Admin y Engineer pueden ver Inventario */}
+          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+            <>
+              <Link to="/inventario">Inventario</Link> |{' '}
+            </>
+          )}
+          
+          {/* Admin y Engineer pueden ver Armado */}
+          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+            <>
+              <Link to="/armado">Armado</Link>
+            </>
+          )}
         </div>
         
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -111,7 +128,7 @@ export default function App() {
         <Route path="/" element={
           usuario?.rol === 'Admin' 
             ? <Navigate to="/usuarios" replace />
-            : <Navigate to="/equipos" replace />
+            : <Navigate to="/conductores" replace />
         } />
         
         {/* Solo Admin puede acceder a Usuarios */}
@@ -119,9 +136,13 @@ export default function App() {
           <Route path="/usuarios" element={<Usuarios />} />
         )}
         
-        <Route path="/equipos" element={<Equipos />} />
-        <Route path="/conductores" element={<Conductores />} />
+        {/* Admin y Engineer pueden ver Equipos */}
+        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+          <Route path="/equipos" element={<Equipos />} />
+        )}
         
+        {/* Todos pueden ver Conductores */}
+        <Route path="/conductores" element={<Conductores />} />
         
         {/* Engineer y Admin pueden ver Presupuesto */}
         {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
@@ -138,8 +159,15 @@ export default function App() {
           <Route path="/partes" element={<Partes />} />
         )}
         
-        <Route path="/inventario" element={<Inventario />} />
-        <Route path="/armado" element={<Armado />} />
+        {/* Admin y Engineer pueden ver Inventario */}
+        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+          <Route path="/inventario" element={<Inventario />} />
+        )}
+        
+        {/* Admin y Engineer pueden ver Armado */}
+        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+          <Route path="/armado" element={<Armado />} />
+        )}
         
         {/* Ruta 404 o acceso denegado */}
         <Route path="*" element={

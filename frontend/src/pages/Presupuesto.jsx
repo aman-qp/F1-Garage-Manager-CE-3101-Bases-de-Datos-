@@ -1,7 +1,9 @@
 import '../styles/presupuesto.css';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Presupuesto() {
+  const { usuario } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState(null);
   const [presupuesto, setPresupuesto] = useState(null);
@@ -41,9 +43,18 @@ export default function Presupuesto() {
       });
       if (res.ok) {
         const data = await res.json();
-        setEquipos(data);
-        if (data.length > 0) {
-          setEquipoSeleccionado(data[0].id_equipo);
+        
+        // Si es Engineer, solo cargar su equipo
+        if (usuario?.rol === 'Engineer' && usuario?.id_equipo) {
+          const miEquipo = data.filter(e => e.id_equipo === usuario.id_equipo);
+          setEquipos(miEquipo);
+          setEquipoSeleccionado(usuario.id_equipo);
+        } else {
+          // Admin ve todos los equipos
+          setEquipos(data);
+          if (data.length > 0) {
+            setEquipoSeleccionado(data[0].id_equipo);
+          }
         }
       }
     } catch (err) {
@@ -168,6 +179,7 @@ export default function Presupuesto() {
           value={equipoSeleccionado || ''}
           onChange={e => setEquipoSeleccionado(Number(e.target.value))}
           className="select-equipo"
+          disabled={usuario?.rol === 'Engineer'}
         >
           {equipos.map(e => (
             <option key={e.id_equipo} value={e.id_equipo}>
@@ -175,6 +187,11 @@ export default function Presupuesto() {
             </option>
           ))}
         </select>
+        {usuario?.rol === 'Engineer' && (
+          <small style={{ marginLeft: '1rem', color: '#999', fontSize: '0.85rem' }}>
+            (Solo puedes gestionar el presupuesto de tu equipo)
+          </small>
+        )}
       </div>
 
       {/* Panel de Presupuesto */}
@@ -198,19 +215,21 @@ export default function Presupuesto() {
         </div>
       )}
 
-      {/* Botones de Acción */}
-      <div className="action-buttons">
-        <button onClick={() => setModalPatrocinador(true)} className="btn btn-primary">
-          + Crear Patrocinador
-        </button>
-        <button
-          onClick={() => setModalAporte(true)}
-          disabled={patrocinadores.length === 0}
-          className="btn btn-success"
-        >
-          + Registrar Aporte
-        </button>
-      </div>
+      {/* Botones de Acción - Solo Admin */}
+      {usuario?.rol === 'Admin' && (
+        <div className="action-buttons">
+          <button onClick={() => setModalPatrocinador(true)} className="btn btn-primary">
+            + Crear Patrocinador
+          </button>
+          <button
+            onClick={() => setModalAporte(true)}
+            disabled={patrocinadores.length === 0}
+            className="btn btn-success"
+          >
+            + Registrar Aporte
+          </button>
+        </div>
+      )}
 
       {/* Grid: Patrocinadores y Aportes */}
       <div className="grid-container">
