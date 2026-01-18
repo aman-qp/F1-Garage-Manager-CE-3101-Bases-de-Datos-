@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 import '../styles/usuarios.css';
 
 export default function Inventario() {
+  const { usuario } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState(null);
   const [inventario, setInventario] = useState([]);
@@ -24,9 +26,18 @@ export default function Inventario() {
       });
       if (res.ok) {
         const data = await res.json();
-        setEquipos(data);
-        if (data.length > 0) {
-          setEquipoSeleccionado(data[0].id_equipo);
+        
+        // Si es Engineer, solo cargar su equipo
+        if (usuario?.rol === 'Engineer' && usuario?.id_equipo) {
+          const miEquipo = data.filter(e => e.id_equipo === usuario.id_equipo);
+          setEquipos(miEquipo);
+          setEquipoSeleccionado(usuario.id_equipo);
+        } else {
+          // Admin ve todos los equipos
+          setEquipos(data);
+          if (data.length > 0) {
+            setEquipoSeleccionado(data[0].id_equipo);
+          }
         }
       }
     } catch (err) {
@@ -56,7 +67,7 @@ export default function Inventario() {
 
   return (
     <div className="usuarios-container">
-      <h2 className="view-title"> Inventario del Equipo</h2>
+      <h2 className="view-title">📦 Inventario del Equipo</h2>
 
       {/* Selector de Equipo */}
       <div style={{ marginBottom: '2rem' }}>
@@ -70,6 +81,7 @@ export default function Inventario() {
         <select
           value={equipoSeleccionado || ''}
           onChange={e => setEquipoSeleccionado(Number(e.target.value))}
+          disabled={usuario?.rol === 'Engineer'}
           style={{
             padding: '0.75rem 1rem',
             borderRadius: '6px',
@@ -78,8 +90,9 @@ export default function Inventario() {
             color: 'white',
             fontSize: '1rem',
             fontWeight: '500',
-            cursor: 'pointer',
-            minWidth: '250px'
+            cursor: usuario?.rol === 'Engineer' ? 'not-allowed' : 'pointer',
+            minWidth: '250px',
+            opacity: usuario?.rol === 'Engineer' ? 0.7 : 1
           }}
         >
           {equipos.map(e => (
@@ -88,6 +101,11 @@ export default function Inventario() {
             </option>
           ))}
         </select>
+        {usuario?.rol === 'Engineer' && (
+          <small style={{ marginLeft: '1rem', color: '#999', fontSize: '0.85rem' }}>
+            (Solo puedes ver el inventario de tu equipo)
+          </small>
+        )}
       </div>
 
       {cargando ? (
@@ -127,9 +145,9 @@ export default function Inventario() {
                 <th>Parte</th>
                 <th>Categoría</th>
                 <th>Cantidad</th>
-                <th> P</th>
-                <th> A</th>
-                <th> M</th>
+                <th>⚡ P</th>
+                <th>✈️ A</th>
+                <th>🎯 M</th>
                 <th>Fecha Adquisición</th>
               </tr>
             </thead>
@@ -179,7 +197,7 @@ export default function Inventario() {
             border: '2px solid #e74c3c'
           }}>
             <h3 style={{ margin: '0 0 1rem 0', color: '#e74c3c' }}>
-               Resumen del Inventario
+              📊 Resumen del Inventario
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div>

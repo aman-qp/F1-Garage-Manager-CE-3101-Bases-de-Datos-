@@ -1,7 +1,9 @@
 import '../styles/tienda.css';
 import { useState, useEffect } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 export default function Tienda() {
+  const { usuario } = useAuth(); // Importar useAuth
   const [equipos, setEquipos] = useState([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState(null);
   const [presupuesto, setPresupuesto] = useState(null);
@@ -41,9 +43,18 @@ export default function Tienda() {
       });
       if (res.ok) {
         const data = await res.json();
-        setEquipos(data);
-        if (data.length > 0) {
-          setEquipoSeleccionado(data[0].id_equipo);
+        
+        // Si es Engineer, solo cargar su equipo
+        if (usuario?.rol === 'Engineer' && usuario?.id_equipo) {
+          const miEquipo = data.filter(e => e.id_equipo === usuario.id_equipo);
+          setEquipos(miEquipo);
+          setEquipoSeleccionado(usuario.id_equipo);
+        } else {
+          // Admin ve todos los equipos
+          setEquipos(data);
+          if (data.length > 0) {
+            setEquipoSeleccionado(data[0].id_equipo);
+          }
         }
       }
     } catch (err) {
@@ -166,6 +177,7 @@ export default function Tienda() {
           value={equipoSeleccionado || ''}
           onChange={e => setEquipoSeleccionado(Number(e.target.value))}
           className="select-equipo"
+          disabled={usuario?.rol === 'Engineer'} // Engineer no puede cambiar de equipo
         >
           {equipos.map(e => (
             <option key={e.id_equipo} value={e.id_equipo}>
@@ -173,6 +185,11 @@ export default function Tienda() {
             </option>
           ))}
         </select>
+        {usuario?.rol === 'Engineer' && (
+          <small style={{ marginLeft: '1rem', color: '#999', fontSize: '0.85rem' }}>
+            (Solo puedes comprar para tu equipo)
+          </small>
+        )}
       </div>
 
       {/* Panel de Presupuesto */}

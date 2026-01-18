@@ -5,7 +5,6 @@ import Login from './pages/Login'
 import Usuarios from './pages/Usuarios'
 import Equipos from './pages/Equipos'
 import Conductores from './pages/Conductores'
-import Patrocinadores from './pages/Patrocinadores'
 import Partes from './pages/Partes'
 import Inventario from './pages/Inventario'
 import Armado from './pages/Armado'
@@ -50,13 +49,38 @@ export default function App() {
         alignItems: 'center' 
       }}>
         <div>
-          <Link to="/usuarios">Usuarios</Link> |{' '}
+          {/* Solo Admin puede ver Usuarios */}
+          {usuario?.rol === 'Admin' && (
+            <>
+              <Link to="/usuarios">Usuarios</Link> |{' '}
+            </>
+          )}
+          
           <Link to="/equipos">Equipos</Link> |{' '}
           <Link to="/conductores">Conductores</Link> |{' '}
-          <Link to="/patrocinadores">Patrocinadores</Link> |{' '}
-          <Link to="/presupuesto">Presupuesto</Link> |{' '}
-          <Link to="/tienda">Tienda</Link> |{' '}  {/* ← AGREGAR ESTE LINK */}
-          <Link to="/partes">Partes</Link> |{' '}
+          
+          
+          {/* Engineer y Admin pueden ver Presupuesto */}
+          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+            <>
+              <Link to="/presupuesto">Presupuesto</Link> |{' '}
+            </>
+          )}
+          
+          {/* Engineer y Admin pueden ver Tienda */}
+          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+            <>
+              <Link to="/tienda">Tienda</Link> |{' '}
+            </>
+          )}
+          
+          {/* Solo Admin puede ver Partes */}
+          {usuario?.rol === 'Admin' && (
+            <>
+              <Link to="/partes">Partes</Link> |{' '}
+            </>
+          )}
+          
           <Link to="/inventario">Inventario</Link> |{' '}
           <Link to="/armado">Armado</Link>
         </div>
@@ -83,16 +107,51 @@ export default function App() {
       </nav>
 
       <Routes>
-        <Route path="/" element={<Navigate to="/usuarios" replace />} />
-        <Route path="/usuarios" element={<Usuarios />} />
+        {/* Ruta por defecto según rol */}
+        <Route path="/" element={
+          usuario?.rol === 'Admin' 
+            ? <Navigate to="/usuarios" replace />
+            : <Navigate to="/equipos" replace />
+        } />
+        
+        {/* Solo Admin puede acceder a Usuarios */}
+        {usuario?.rol === 'Admin' && (
+          <Route path="/usuarios" element={<Usuarios />} />
+        )}
+        
         <Route path="/equipos" element={<Equipos />} />
         <Route path="/conductores" element={<Conductores />} />
-        <Route path="/patrocinadores" element={<Patrocinadores />} />
-        <Route path="/presupuesto" element={<Presupuesto />} />
-        <Route path="/tienda" element={<Tienda />} />  {/* ← AGREGAR ESTA RUTA */}
-        <Route path="/partes" element={<Partes />} />
+        
+        
+        {/* Engineer y Admin pueden ver Presupuesto */}
+        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+          <Route path="/presupuesto" element={<Presupuesto />} />
+        )}
+        
+        {/* Engineer y Admin pueden ver Tienda */}
+        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
+          <Route path="/tienda" element={<Tienda />} />
+        )}
+        
+        {/* Solo Admin puede ver Partes */}
+        {usuario?.rol === 'Admin' && (
+          <Route path="/partes" element={<Partes />} />
+        )}
+        
         <Route path="/inventario" element={<Inventario />} />
         <Route path="/armado" element={<Armado />} />
+        
+        {/* Ruta 404 o acceso denegado */}
+        <Route path="*" element={
+          <div style={{ 
+            textAlign: 'center', 
+            padding: '4rem', 
+            color: 'white' 
+          }}>
+            <h2>Acceso Denegado</h2>
+            <p>No tienes permisos para acceder a esta página</p>
+          </div>
+        } />
       </Routes>
     </div>
   )
