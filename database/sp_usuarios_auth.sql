@@ -123,5 +123,5 @@ BEGIN
 END;
 GO
 
-PRINT '✅ Stored Procedures de autenticación creados exitosamente';
+PRINT 'Stored Procedures de autenticación creados exitosamente';
 GO

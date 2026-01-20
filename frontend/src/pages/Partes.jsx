@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import '../styles/card.css';
+import '../styles/partes.css';
 
 export default function Partes() {
   const [partes, setPartes] = useState([]);

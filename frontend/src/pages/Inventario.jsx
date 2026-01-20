@@ -67,7 +67,7 @@ export default function Inventario() {
 
   return (
     <div className="usuarios-container">
-      <h2 className="view-title">📦 Inventario del Equipo</h2>
+      <h2 className="view-title">Inventario del Equipo</h2>
 
       {/* Selector de Equipo */}
       <div style={{ marginBottom: '2rem' }}>
@@ -145,9 +145,9 @@ export default function Inventario() {
                 <th>Parte</th>
                 <th>Categoría</th>
                 <th>Cantidad</th>
-                <th>⚡ P</th>
-                <th>✈️ A</th>
-                <th>🎯 M</th>
+                <th>Potencia (P)</th>
+                <th>Aerodinámica (A)</th>
+                <th>Manejo (M)</th>
                 <th>Fecha Adquisición</th>
               </tr>
             </thead>
@@ -197,7 +197,7 @@ export default function Inventario() {
             border: '2px solid #e74c3c'
           }}>
             <h3 style={{ margin: '0 0 1rem 0', color: '#e74c3c' }}>
-              📊 Resumen del Inventario
+              Resumen del Inventario
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div>

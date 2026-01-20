@@ -1,7 +1,7 @@
 USE F1GarageManager;
 GO
 
----SPListar Partes 
+---SP Listar Partes 
 CREATE PROCEDURE dbo.SP_Partes_Listar
 AS
 BEGIN

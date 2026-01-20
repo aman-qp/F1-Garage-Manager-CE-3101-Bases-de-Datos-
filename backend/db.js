@@ -4,7 +4,7 @@ const sql = require('mssql');
 const config = {
   user: process.env.DB_USER || 'api_user',
   password: process.env.DB_PASS || '12345',
-  server: 'DESKTOP-GACT0PO', //Aqui va el nombre de sus servidores 
+  server: 'Amanda_PC', //Aqui va el nombre de sus servidores 
   database: 'F1GarageManager',
   options: {
     encrypt: false,

@@ -1,19 +1,24 @@
-import { Routes, Route, Link, Navigate } from 'react-router-dom'
-import { useAuth } from './context/AuthContext'
-import Header from './components/Header'
-import Login from './pages/Login'
-import Usuarios from './pages/Usuarios'
-import Equipos from './pages/Equipos'
-import Conductores from './pages/Conductores'
-import Partes from './pages/Partes'
-import Inventario from './pages/Inventario'
-import Armado from './pages/Armado'
-import Presupuesto from './pages/Presupuesto'
-import Tienda from './pages/Tienda'
+import { Routes, Route, Link, Navigate } from 'react-router-dom';
+import { useAuth } from './context/AuthContext';
+
+import Header from './components/Header';
+import ProtectedRoute from './components/ProtectedRoute';
+
+import Login from './pages/Login';
+import Usuarios from './pages/Usuarios';
+import Equipos from './pages/Equipos';
+import Conductores from './pages/Conductores';
+import Partes from './pages/Partes';
+import Inventario from './pages/Inventario';
+import Armado from './pages/Armado';
+import Presupuesto from './pages/Presupuesto';
+import Tienda from './pages/Tienda';
+import PerfilDriver from './pages/PerfilDriver';
 
 export default function App() {
   const { isAuthenticated, usuario, loading, logout } = useAuth();
 
+  // Loader global mientras AuthContext valida sesión
   if (loading) {
     return (
       <div style={{ 
@@ -29,6 +34,7 @@ export default function App() {
     );
   }
 
+  // Si no hay sesión, solo permitir /login
   if (!isAuthenticated) {
     return (
       <Routes>
@@ -37,11 +43,12 @@ export default function App() {
       </Routes>
     );
   }
-  
+
   return (
     <div className="app-container">
       <Header />
 
+      {/* NAV */}
       <nav style={{ 
         marginBottom: '20px', 
         display: 'flex', 
@@ -49,63 +56,35 @@ export default function App() {
         alignItems: 'center' 
       }}>
         <div>
-          {/* Solo Admin puede ver Usuarios */}
-          {usuario?.rol === 'Admin' && (
+          {/* DRIVER: SOLO ve su Perfil */}
+          {usuario?.rol === 'Driver' ? (
+            <Link to="/perfil-driver">Mi Perfil</Link>
+          ) : (
             <>
-              <Link to="/usuarios">Usuarios</Link> |{' '}
-            </>
-          )}
-          
-          {/* Admin y Engineer pueden ver Equipos */}
-          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-            <>
-              <Link to="/equipos">Equipos</Link> |{' '}
-            </>
-          )}
-          
-          {/* Todos pueden ver Conductores */}
-          <Link to="/conductores">Conductores</Link> |{' '}
-          
-          {/* Engineer y Admin pueden ver Presupuesto */}
-          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-            <>
+              {/* Solo Admin */}
+              {usuario?.rol === 'Admin' && (
+                <>
+                  <Link to="/usuarios">Usuarios</Link> |{' '}
+                  <Link to="/equipos">Equipos</Link> |{' '}
+                  <Link to="/partes">Partes</Link> |{' '}
+                </>
+              )}
+
+              {/* Admin y Engineer */}
+              <Link to="/conductores">Conductores</Link> |{' '}
               <Link to="/presupuesto">Presupuesto</Link> |{' '}
-            </>
-          )}
-          
-          {/* Engineer y Admin pueden ver Tienda */}
-          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-            <>
               <Link to="/tienda">Tienda</Link> |{' '}
-            </>
-          )}
-          
-          {/* Solo Admin puede ver Partes */}
-          {usuario?.rol === 'Admin' && (
-            <>
-              <Link to="/partes">Partes</Link> |{' '}
-            </>
-          )}
-          
-          {/* Admin y Engineer pueden ver Inventario */}
-          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-            <>
               <Link to="/inventario">Inventario</Link> |{' '}
-            </>
-          )}
-          
-          {/* Admin y Engineer pueden ver Armado */}
-          {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-            <>
               <Link to="/armado">Armado</Link>
             </>
           )}
         </div>
-        
+
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <span style={{ color: '#ef4444', fontWeight: 'bold' }}>
             {usuario?.nombre_usuario} ({usuario?.rol})
           </span>
+
           <button 
             onClick={logout}
             style={{
@@ -125,62 +104,116 @@ export default function App() {
 
       <Routes>
         {/* Ruta por defecto según rol */}
-        <Route path="/" element={
-          usuario?.rol === 'Admin' 
-            ? <Navigate to="/usuarios" replace />
-            : <Navigate to="/conductores" replace />
-        } />
-        
-        {/* Solo Admin puede acceder a Usuarios */}
-        {usuario?.rol === 'Admin' && (
-          <Route path="/usuarios" element={<Usuarios />} />
-        )}
-        
-        {/* Admin y Engineer pueden ver Equipos */}
-        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-          <Route path="/equipos" element={<Equipos />} />
-        )}
-        
-        {/* Todos pueden ver Conductores */}
-        <Route path="/conductores" element={<Conductores />} />
-        
-        {/* Engineer y Admin pueden ver Presupuesto */}
-        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-          <Route path="/presupuesto" element={<Presupuesto />} />
-        )}
-        
-        {/* Engineer y Admin pueden ver Tienda */}
-        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-          <Route path="/tienda" element={<Tienda />} />
-        )}
-        
-        {/* Solo Admin puede ver Partes */}
-        {usuario?.rol === 'Admin' && (
-          <Route path="/partes" element={<Partes />} />
-        )}
-        
-        {/* Admin y Engineer pueden ver Inventario */}
-        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-          <Route path="/inventario" element={<Inventario />} />
-        )}
-        
-        {/* Admin y Engineer pueden ver Armado */}
-        {(usuario?.rol === 'Admin' || usuario?.rol === 'Engineer') && (
-          <Route path="/armado" element={<Armado />} />
-        )}
-        
-        {/* Ruta 404 o acceso denegado */}
-        <Route path="*" element={
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '4rem', 
-            color: 'white' 
-          }}>
-            <h2>Acceso Denegado</h2>
-            <p>No tienes permisos para acceder a esta página</p>
-          </div>
-        } />
+        <Route
+          path="/"
+          element={
+            usuario?.rol === 'Admin'
+              ? <Navigate to="/usuarios" replace />
+              : usuario?.rol === 'Engineer'
+                ? <Navigate to="/conductores" replace />
+                : <Navigate to="/perfil-driver" replace />
+          }
+        />
+
+        {/* DRIVER */}
+        <Route
+          path="/perfil-driver"
+          element={
+            <ProtectedRoute roles={['Driver']}>
+              <PerfilDriver />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ADMIN */}
+        <Route
+          path="/usuarios"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <Usuarios />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/equipos"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <Equipos />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/partes"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <Partes />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ADMIN + ENGINEER */}
+        <Route
+          path="/conductores"
+          element={
+            <ProtectedRoute roles={['Admin', 'Engineer']}>
+              <Conductores />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/presupuesto"
+          element={
+            <ProtectedRoute roles={['Admin', 'Engineer']}>
+              <Presupuesto />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tienda"
+          element={
+            <ProtectedRoute roles={['Admin', 'Engineer']}>
+              <Tienda />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/inventario"
+          element={
+            <ProtectedRoute roles={['Admin', 'Engineer']}>
+              <Inventario />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/armado"
+          element={
+            <ProtectedRoute roles={['Admin', 'Engineer']}>
+              <Armado />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 404 */}
+        <Route
+          path="*"
+          element={
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '4rem', 
+              color: 'white' 
+            }}>
+              <h2>Página no encontrada</h2>
+              <p>La ruta no existe.</p>
+            </div>
+          }
+        />
       </Routes>
     </div>
-  )
+  );
 }

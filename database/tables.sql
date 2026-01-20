@@ -68,8 +68,13 @@ CREATE TABLE dbo.CARRO (
     CONSTRAINT FK_CARRO_CONDUCTOR
         FOREIGN KEY (id_conductor) REFERENCES dbo.CONDUCTOR(id_usuario),
 
-    CONSTRAINT UQ_CARRO_conductor UNIQUE (id_conductor)
 );
+GO
+
+-- Asegura que un conductor solo tenga un carro asignado cuando el carro está Finalizado
+CREATE UNIQUE INDEX UX_CARRO_conductor_not_null
+ON dbo.CARRO(id_conductor)
+WHERE id_conductor IS NOT NULL;
 GO
 
 -- Para poder amarrar INSTALA al equipo dueño del carro (FK compuesta)

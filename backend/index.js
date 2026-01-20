@@ -26,7 +26,7 @@ app.use(session({
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 // 1 hora (ejemplo)
+    maxAge: 1000 * 60 * 60 // 1 hora 
   }
 }));
 
@@ -84,28 +84,33 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
    // Crear sesión
-req.session.userId = usuario.id_usuario;
-req.session.rol = usuario.rol;
-req.session.nombre_usuario = usuario.nombre_usuario;
-req.session.id_equipo = usuario.id_equipo;
+    req.session.userId = usuario.id_usuario;
+    req.session.rol = usuario.rol;
+    req.session.nombre_usuario = usuario.nombre_usuario;
+    req.session.id_equipo = usuario.id_equipo;
 
-// guarda la sesion
-req.session.save(err => {
-  if (err) {
-    console.error('Error al guardar sesión:', err);
-    return res.status(500).json({ message: 'Error al crear sesión' });
+    // guarda la sesion
+    req.session.save(err => {
+      if (err) {
+        console.error('Error al guardar sesión:', err);
+        return res.status(500).json({ message: 'Error al crear sesión' });
+      }
+
+      res.json({
+        message: 'Login exitoso',
+        usuario: {
+          id: usuario.id_usuario,
+          nombre_usuario: usuario.nombre_usuario,
+          nombre_completo: usuario.nombre_completo,
+          rol: usuario.rol,
+          id_equipo: usuario.id_equipo
+        }
+      });
+    });
+  } catch (err) {
+    console.error('Error al hacer login:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
   }
-
-  res.json({
-    message: 'Login exitoso',
-    usuario: {
-      id: usuario.id_usuario,
-      nombre_usuario: usuario.nombre_usuario,
-      nombre_completo: usuario.nombre_completo,
-      rol: usuario.rol,
-      id_equipo: usuario.id_equipo
-    }
-  });
 });
 
 // Logout
@@ -191,32 +196,38 @@ app.get('/api/usuarios', requireRole('Admin'), async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+
 // ===============================
 // PERFIL DEL CONDUCTOR (DRIVER)
 // ===============================
-app.get('/api/conductor/me', requireRole('Driver'), (req, res) => {
+app.get('/api/conductor/me', requireRole('Driver'), async (req, res) => {
   try {
-    // Validación extra por seguridad
     if (!req.session || !req.session.userId) {
       return res.status(401).json({ message: 'No autenticado' });
     }
 
-    // Respuesta usando SOLO sesión (sin DB)
-    return res.json({
-      id: req.session.userId,
-      nombre: req.session.nombre_usuario,
-      rol: req.session.rol,
-      id_equipo: req.session.id_equipo ?? null,
-      habilidad: 75,        // Dummy
-      historial: []         // Dummy
-    });
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_usuario', sql.Int, req.session.userId)
+      .execute('sp_ObtenerPerfilDriver');
 
+    // Resultado tiene 3 recordsets: perfil, resultados, estadísticas
+    res.json({
+      perfil: result.recordsets[0][0] || null,
+      resultados: result.recordsets[1] || [],
+      estadisticas: result.recordsets[2][0] || {
+        total_carreras: 0,
+        posicion_promedio: 0,
+        mejor_posicion: null,
+        victorias: 0,
+        podios: 0
+      }
+    });
   } catch (error) {
     console.error('Error perfil conductor:', error);
     res.status(500).json({ message: 'Error al obtener perfil del conductor' });
   }
 });
-
 
 // =============================================
 // RUTAS DE EQUIPOS
@@ -285,6 +296,58 @@ app.get('/api/equipos/:id/presupuesto', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+
+// Actualizar equipo (Admin only)
+app.put('/api/equipos/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre } = req.body;
+
+    if (!nombre) {
+      return res.status(400).json({ message: 'El nombre es requerido' });
+    }
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_equipo', sql.Int, Number(id))
+      .input('nombre', sql.VarChar(100), nombre)
+      .execute('sp_ActualizarEquipo');
+
+    res.json({ message: 'Equipo actualizado exitosamente' });
+  } catch (err) {
+    console.error('Error al actualizar equipo:', err);
+
+    if (err.message && err.message.includes('Ya existe')) {
+      return res.status(409).json({ message: 'El nombre del equipo ya existe' });
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Eliminar equipo (Admin only)
+app.delete('/api/equipos/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_equipo', sql.Int, Number(id))
+      .execute('sp_EliminarEquipo');
+
+    res.json({ message: 'Equipo eliminado exitosamente' });
+  } catch (err) {
+    console.error('Error al eliminar equipo:', err);
+
+    // Mensaje de SP (por si está “en uso”)
+    if (err.message && err.message.includes('No se puede eliminar')) {
+      return res.status(400).json({ message: err.message });
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 
 // =============================================
 // RUTAS DE PATROCINADORES
@@ -659,7 +722,7 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
       .query("SELECT COUNT(*) as count FROM dbo.USUARIO WHERE rol = 'Admin'");
     
     if (result.recordset[0].count === 0) {
-      console.log('⚠️  No hay usuarios Admin. Ejecutando seed inicial...\n');
+      console.log('No hay usuarios Admin. Ejecutando seed inicial...\n');
       const bcrypt = require('bcrypt');
       const hashedPassword = await bcrypt.hash('admin123', 10);
       
@@ -671,7 +734,7 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
         .input('contrasena_hash', sql.VarChar(255), hashedPassword)
         .execute('sp_CrearUsuario');
       
-      console.log('✅ Usuario admin creado automáticamente');
+      console.log('   Usuario admin creado automáticamente');
       console.log('   Usuario: admin');
       console.log('   Contraseña: admin123\n');
     }
@@ -681,16 +744,353 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
 })();
 
 // =============================================
+// RUTAS DE CONDUCTORES
+// =============================================
+
+// Listar todos los conductores
+app.get('/api/conductores', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const pool = await poolPromise;
+
+    const id_equipo =
+      req.session.rol === 'Engineer'
+        ? req.session.id_equipo
+        : (req.query.id_equipo ? Number(req.query.id_equipo) : null);
+
+    const result = await pool.request()
+      .input('id_equipo', sql.Int, id_equipo)
+      .execute('sp_ListarConductores');
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al listar conductores:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Listar usuarios Driver disponibles (sin ser conductores)
+app.get('/api/conductores/disponibles', requireRole('Admin'), async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .execute('sp_ListarDriversDisponibles');
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al listar drivers disponibles:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Crear conductor
+app.post('/api/conductores', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id_usuario, id_equipo, habilidad_h } = req.body;
+
+    if (!id_usuario || !id_equipo || habilidad_h === undefined) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
+    }
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_usuario', sql.Int, id_usuario)
+      .input('id_equipo', sql.Int, id_equipo)
+      .input('habilidad_h', sql.Int, habilidad_h)
+      .execute('sp_CrearConductor');
+
+    res.status(201).json({ message: 'Conductor creado exitosamente' });
+  } catch (err) {
+    console.error('Error al crear conductor:', err);
+    
+    if (err.message && err.message.includes('ya está registrado')) {
+      return res.status(409).json({ message: 'Este usuario ya es conductor' });
+    }
+    if (err.message && err.message.includes('no es Driver')) {
+      return res.status(400).json({ message: 'El usuario debe tener rol Driver' });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Actualizar conductor
+app.put('/api/conductores/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_equipo, habilidad_h } = req.body;
+
+    if (!id_equipo || habilidad_h === undefined) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
+    }
+
+    // Engineer solo puede actualizar conductores de su equipo
+    if (req.session.rol === 'Engineer' && req.session.id_equipo != id_equipo) {
+      return res.status(403).json({ message: 'Acceso denegado' });
+    }
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_conductor', sql.Int, id)
+      .input('id_equipo', sql.Int, id_equipo)
+      .input('habilidad_h', sql.Int, habilidad_h)
+      .execute('sp_ActualizarConductor');
+
+    res.json({ message: 'Conductor actualizado exitosamente' });
+  } catch (err) {
+    console.error('Error al actualizar conductor:', err);
+    
+    if (err.message && err.message.includes('asignado a un carro')) {
+      return res.status(400).json({ message: 'No se puede cambiar de equipo: el conductor está en un carro' });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Eliminar conductor
+app.delete('/api/conductores/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_conductor', sql.Int, id)
+      .execute('sp_EliminarConductor');
+
+    res.json({ message: 'Conductor eliminado exitosamente' });
+  } catch (err) {
+    console.error('Error al eliminar conductor:', err);
+    
+    if (err.message && err.message.includes('asignado a un carro')) {
+      return res.status(400).json({ message: 'No se puede eliminar: el conductor está en un carro' });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// =============================================
+// RUTAS DE ARMADO DE CARROS
+// =============================================
+
+// Crear carro
+app.post('/api/carros', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const { id_equipo } = req.body;
+
+    if (!id_equipo) {
+      return res.status(400).json({ message: 'id_equipo es requerido' });
+    }
+
+    // Engineer solo puede crear carros para su equipo
+    if (req.session.rol === 'Engineer' && req.session.id_equipo != id_equipo) {
+      return res.status(403).json({ message: 'Acceso denegado' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_equipo', sql.Int, id_equipo)
+      .execute('sp_CrearCarro');
+
+    const newId = result.recordset[0].id_carro;
+
+    res.status(201).json({ id_carro: newId, id_equipo, estado: 'Armando' });
+  } catch (err) {
+    console.error('Error al crear carro:', err);
+    
+    if (err.message && err.message.includes('máximo de 2 carros')) {
+      return res.status(400).json({ message: 'El equipo ya tiene el máximo de 2 carros' });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Listar carros de un equipo
+app.get('/api/carros/equipo/:id_equipo', requireAuth, async (req, res) => {
+  try {
+    const { id_equipo } = req.params;
+
+    // Engineer solo puede ver carros de su equipo
+    if (req.session.rol === 'Engineer' && req.session.id_equipo != id_equipo) {
+      return res.status(403).json({ message: 'Acceso denegado' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_equipo', sql.Int, id_equipo)
+      .execute('sp_ListarCarros');
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al listar carros:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Obtener setup completo de un carro
+app.get('/api/carros/:id/setup', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_carro', sql.Int, id)
+      .execute('sp_ObtenerSetupCarro');
+
+    // Resultado tiene 3 recordsets: info carro, partes instaladas, totales
+    res.json({
+      carro: result.recordsets[0][0] || null,
+      partes: result.recordsets[1] || [],
+      totales: result.recordsets[2][0] || { total_potencia: 0, total_aerodinamica: 0, total_manejo: 0 }
+    });
+  } catch (err) {
+    console.error('Error al obtener setup:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Listar partes disponibles del inventario por categoría
+app.get('/api/inventario/:id_equipo/categoria/:id_categoria', requireAuth, async (req, res) => {
+  try {
+    const { id_equipo, id_categoria } = req.params;
+
+    // Engineer solo puede ver inventario de su equipo
+    if (req.session.rol === 'Engineer' && req.session.id_equipo != id_equipo) {
+      return res.status(403).json({ message: 'Acceso denegado' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_equipo', sql.Int, id_equipo)
+      .input('id_categoria', sql.Int, id_categoria)
+      .execute('sp_ListarInventarioPorCategoria');
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al listar inventario por categoría:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Instalar/Reemplazar parte en un carro
+app.post('/api/carros/:id/instalar', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_categoria, id_parte } = req.body;
+
+    if (!id_categoria || !id_parte) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_carro', sql.Int, id)
+      .input('id_categoria', sql.Int, id_categoria)
+      .input('id_parte', sql.Int, id_parte)
+      .execute('sp_InstalarParte');
+
+    res.json({ message: 'Parte instalada exitosamente' });
+  } catch (err) {
+    console.error('Error al instalar parte:', err);
+    
+    if (err.message && err.message.includes('no está disponible')) {
+      return res.status(400).json({ message: 'La parte no está disponible en el inventario' });
+    }
+    if (err.message && err.message.includes('Armando')) {
+      return res.status(400).json({ message: 'Solo se pueden modificar carros en estado Armando' });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Listar conductores disponibles del equipo
+app.get('/api/equipos/:id/conductores', requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Engineer solo puede ver conductores de su equipo
+    if (req.session.rol === 'Engineer' && req.session.id_equipo != id) {
+      return res.status(403).json({ message: 'Acceso denegado' });
+    }
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_equipo', sql.Int, id)
+      .execute('sp_ListarConductoresDisponibles');
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error al listar conductores:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Asignar conductor al carro
+app.put('/api/carros/:id/conductor', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { id_conductor } = req.body;
+
+    if (!id_conductor) {
+      return res.status(400).json({ message: 'id_conductor es requerido' });
+    }
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_carro', sql.Int, id)
+      .input('id_conductor', sql.Int, id_conductor)
+      .execute('sp_AsignarConductor');
+
+    res.json({ message: 'Conductor asignado exitosamente' });
+  } catch (err) {
+    console.error('Error al asignar conductor:', err);
+    
+    if (err.message && err.message.includes('ya está asignado')) {
+      return res.status(400).json({ message: 'El conductor ya está asignado a otro carro' });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Finalizar carro
+app.post('/api/carros/:id/finalizar', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    await pool.request()
+      .input('id_carro', sql.Int, id)
+      .execute('sp_FinalizarCarro');
+
+    res.json({ message: 'Carro finalizado exitosamente' });
+  } catch (err) {
+    console.error('Error al finalizar carro:', err);
+    
+    if (err.message && err.message.includes('5 categorías')) {
+      return res.status(400).json({ message: 'El carro debe tener las 5 categorías instaladas' });
+    }
+    if (err.message && err.message.includes('conductor asignado')) {
+      return res.status(400).json({ message: 'El carro debe tener un conductor asignado' });
+    }
+    
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// =============================================
 // INICIAR SERVIDOR
 // =============================================
 
 app.listen(PORT, () => {
   console.log(`
   ========================================
-  🚀 API F1 Garage Manager
+  API F1 Garage Manager
   ========================================
-  🌐 Servidor: http://localhost:${PORT}
-  📅 Fecha: ${new Date().toLocaleString()}
+  Servidor: http://localhost:${PORT}
+  Fecha: ${new Date().toLocaleString()}
   ========================================
   `);
 });

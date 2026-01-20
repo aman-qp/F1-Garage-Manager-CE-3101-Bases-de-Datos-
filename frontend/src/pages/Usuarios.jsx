@@ -3,10 +3,6 @@ import '../styles/usuarios.css'
 
 export default function Usuarios() {
   const [usuarios, setUsuarios] = useState([
-    /*{ id: 1, nombre: 'Admin', rol: 'Administrador' },
-    { id: 2, nombre: 'Juan', rol: 'Ingeniero' },
-    { id: 3, nombre: 'Ana', rol: 'Driver' }*/
-    //Comento los precargados para iniciar con la tabla vacía
   ])
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -43,7 +39,7 @@ export default function Usuarios() {
   try {
     const res = await fetch('http://localhost:3001/api/usuarios', {
       method: 'POST',
-      credentials: 'include', // 🔴 MUY IMPORTANTE
+      credentials: 'include', 
       headers: {
         'Content-Type': 'application/json'
       },

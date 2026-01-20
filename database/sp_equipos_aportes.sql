@@ -48,6 +48,72 @@ BEGIN
 END;
 GO
 
+-- =============================================
+-- SP: Actualizar equipo
+-- =============================================
+CREATE OR ALTER PROCEDURE dbo.sp_ActualizarEquipo
+    @id_equipo INT,
+    @nombre VARCHAR(100)
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.EQUIPO WHERE id_equipo = @id_equipo)
+    BEGIN
+        RAISERROR('El equipo no existe', 16, 1);
+        RETURN;
+    END
+
+    IF EXISTS (
+        SELECT 1
+        FROM dbo.EQUIPO
+        WHERE nombre = @nombre
+          AND id_equipo <> @id_equipo
+    )
+    BEGIN
+        RAISERROR('Ya existe un equipo con ese nombre', 16, 1);
+        RETURN;
+    END
+
+    UPDATE dbo.EQUIPO
+    SET nombre = @nombre
+    WHERE id_equipo = @id_equipo;
+END;
+GO
+
+-- =============================================
+-- SP: Eliminar equipo (solo si no tiene dependencias)
+-- =============================================
+CREATE OR ALTER PROCEDURE dbo.sp_EliminarEquipo
+    @id_equipo INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    IF NOT EXISTS (SELECT 1 FROM dbo.EQUIPO WHERE id_equipo = @id_equipo)
+    BEGIN
+        RAISERROR('El equipo no existe', 16, 1);
+        RETURN;
+    END
+
+    -- Si tiene cosas relacionadas, no se deja borrar (evita desastre)
+    IF EXISTS (SELECT 1 FROM dbo.CARRO WHERE id_equipo = @id_equipo)
+       OR EXISTS (SELECT 1 FROM dbo.USUARIO WHERE id_equipo = @id_equipo)
+       OR EXISTS (SELECT 1 FROM dbo.CONDUCTOR WHERE id_equipo = @id_equipo)
+       OR EXISTS (SELECT 1 FROM dbo.PATROCINADOR WHERE id_equipo = @id_equipo)
+       OR EXISTS (SELECT 1 FROM dbo.APORTA WHERE id_equipo = @id_equipo)
+       OR EXISTS (SELECT 1 FROM dbo.COMPRA WHERE id_equipo = @id_equipo)
+       OR EXISTS (SELECT 1 FROM dbo.TIENE WHERE id_equipo = @id_equipo)
+    BEGIN
+        RAISERROR('No se puede eliminar: el equipo está en uso (tiene carros/usuarios/conductores/patrocinadores/aportes/compras/inventario).', 16, 1);
+        RETURN;
+    END
+
+    DELETE FROM dbo.EQUIPO
+    WHERE id_equipo = @id_equipo;
+END;
+GO
+
 -- SP 3: Obtener presupuesto de un equipo
 CREATE OR ALTER PROCEDURE dbo.sp_ObtenerPresupuesto
     @id_equipo INT
@@ -229,5 +295,5 @@ BEGIN
 END;
 GO
 
-PRINT '✅ Stored Procedures de equipos, patrocinadores y aportes creados exitosamente';
+PRINT ' Stored Procedures de equipos, patrocinadores y aportes creados exitosamente';
 GO
