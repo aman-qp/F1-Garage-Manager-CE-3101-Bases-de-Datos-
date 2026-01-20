@@ -123,5 +123,114 @@ BEGIN
 END;
 GO
 
+-- =============================================
+-- SP 5: Actualizar Usuario
+-- =============================================
+CREATE OR ALTER PROCEDURE dbo.sp_ActualizarUsuario
+  @id_usuario INT,
+  @id_equipo INT = NULL,
+  @nombre_usuario VARCHAR(80),
+  @nombre_completo VARCHAR(100),
+  @rol VARCHAR(20),
+  @contrasena_hash VARCHAR(255) = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF NOT EXISTS (SELECT 1 FROM dbo.USUARIO WHERE id_usuario = @id_usuario)
+  BEGIN
+    RAISERROR('El usuario no existe', 16, 1);
+    RETURN;
+  END
+
+  -- Evitar duplicado de username con otro usuario
+  IF EXISTS (
+    SELECT 1 FROM dbo.USUARIO
+    WHERE nombre_usuario = @nombre_usuario
+      AND id_usuario <> @id_usuario
+  )
+  BEGIN
+    RAISERROR('El nombre de usuario ya existe', 16, 1);
+    RETURN;
+  END
+
+  IF @rol NOT IN ('Admin', 'Engineer', 'Driver')
+  BEGIN
+    RAISERROR('Rol inválido. Debe ser Admin, Engineer o Driver', 16, 1);
+    RETURN;
+  END
+
+  IF @rol = 'Engineer' AND @id_equipo IS NULL
+  BEGIN
+    RAISERROR('Un Engineer debe tener asignado un id_equipo', 16, 1);
+    RETURN;
+  END
+
+  IF @rol IN ('Admin', 'Driver') AND @id_equipo IS NOT NULL
+  BEGIN
+    RAISERROR('Admin y Driver no deben tener id_equipo asignado', 16, 1);
+    RETURN;
+  END
+
+  IF @rol = 'Engineer' AND NOT EXISTS (SELECT 1 FROM dbo.EQUIPO WHERE id_equipo = @id_equipo)
+  BEGIN
+    RAISERROR('El equipo especificado no existe', 16, 1);
+    RETURN;
+  END
+
+  -- Actualizar (si contrasena_hash viene NULL, no se toca)
+  UPDATE dbo.USUARIO
+  SET
+    id_equipo = @id_equipo,
+    nombre_usuario = @nombre_usuario,
+    nombre_completo = @nombre_completo,
+    rol = @rol,
+    contrasena_hash = CASE WHEN @contrasena_hash IS NULL THEN contrasena_hash ELSE @contrasena_hash END
+  WHERE id_usuario = @id_usuario;
+END;
+GO
+
+-- =============================================
+-- SP 6: Eliminar Usuario
+-- =============================================
+CREATE OR ALTER PROCEDURE dbo.sp_EliminarUsuario
+  @id_usuario INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
+
+  BEGIN TRAN;
+
+  -- Validar que existe
+  IF NOT EXISTS (SELECT 1 FROM dbo.USUARIO WHERE id_usuario = @id_usuario)
+  BEGIN
+    ROLLBACK;
+    RAISERROR('El usuario no existe', 16, 1);
+    RETURN;
+  END
+
+  -- No permitir borrar si está asignado a un carro
+  IF EXISTS (SELECT 1 FROM dbo.CARRO WHERE id_conductor = @id_usuario)
+  BEGIN
+    ROLLBACK;
+    RAISERROR('No se puede eliminar: el conductor está asignado a un carro', 16, 1);
+    RETURN;
+  END
+
+  -- Si es conductor, borrar primero el registro de CONDUCTOR
+  DELETE FROM dbo.CONDUCTOR
+  WHERE id_usuario = @id_usuario;
+
+  -- Borrar usuario
+  DELETE FROM dbo.USUARIO
+  WHERE id_usuario = @id_usuario;
+
+  COMMIT;
+
+  SELECT 'Usuario eliminado exitosamente' AS mensaje;
+END;
+GO
+
 PRINT 'Stored Procedures de autenticación creados exitosamente';
 GO

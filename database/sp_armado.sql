@@ -365,5 +365,96 @@ BEGIN
 END;
 GO
 
+-- =============================================
+-- SP 9: Eliminar carro
+-- =============================================
+CREATE OR ALTER PROCEDURE dbo.sp_EliminarCarro
+    @id_carro INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRAN;
+
+    -- Validar que el carro existe
+    IF NOT EXISTS (SELECT 1 FROM dbo.CARRO WHERE id_carro = @id_carro)
+    BEGIN
+        ROLLBACK;
+        RAISERROR('El carro no existe', 16, 1);
+        RETURN;
+    END
+
+    -- No permitir eliminar si ya participó en simulaciones
+    IF EXISTS (SELECT 1 FROM dbo.RESULTADO WHERE id_carro = @id_carro)
+    BEGIN
+        ROLLBACK;
+        RAISERROR('No se puede eliminar: el carro ha participado en simulaciones', 16, 1);
+        RETURN;
+    END
+
+    -- Devolver partes instaladas al inventario del equipo (por conteo)
+    ;WITH Devuelve AS (
+        SELECT
+            i.id_equipo,
+            i.id_parte,
+            COUNT(*) AS cant
+        FROM dbo.INSTALA i
+        WHERE i.id_carro = @id_carro
+        GROUP BY i.id_equipo, i.id_parte
+    )
+    UPDATE t
+      SET t.cantidad = t.cantidad + d.cant
+    FROM dbo.TIENE t
+    JOIN Devuelve d
+      ON d.id_equipo = t.id_equipo
+     AND d.id_parte  = t.id_parte;
+
+    -- Eliminar instalaciones
+    DELETE FROM dbo.INSTALA
+    WHERE id_carro = @id_carro;
+
+    -- Eliminar carro (esto libera al conductor automáticamente)
+    DELETE FROM dbo.CARRO
+    WHERE id_carro = @id_carro;
+
+    COMMIT;
+
+    SELECT 'Carro eliminado exitosamente. Partes devueltas al inventario y conductor liberado.' AS mensaje;
+END;
+GO
+
+CREATE OR ALTER PROCEDURE dbo.sp_ObtenerInventarioEquipo
+  @id_equipo INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  -- Validar que exista el equipo (opcional pero bonito)
+  IF NOT EXISTS (SELECT 1 FROM dbo.EQUIPO WHERE id_equipo = @id_equipo)
+  BEGIN
+    RAISERROR('El equipo no existe', 16, 1);
+    RETURN;
+  END
+
+  SELECT 
+    t.id_equipo,
+    t.id_parte,
+    pa.nombre AS nombre_parte,
+    c.tipo_de_parte AS categoria,
+    t.cantidad,
+    t.fecha_adquirido AS fecha_adquisicion,
+    pa.potencia AS p,
+    pa.aerodinamica AS a,
+    pa.manejo AS m
+  FROM dbo.TIENE t
+  JOIN dbo.PARTE pa ON pa.id_parte = t.id_parte
+  JOIN dbo.CATEGORIA c ON c.id_categoria = pa.id_categoria
+  WHERE t.id_equipo = @id_equipo
+    AND t.cantidad > 0
+  ORDER BY c.tipo_de_parte, pa.nombre;
+END;
+GO
+
 PRINT 'Stored Procedures de Armado creados exitosamente';
 GO

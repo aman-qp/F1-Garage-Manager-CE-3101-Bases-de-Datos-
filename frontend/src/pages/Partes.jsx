@@ -185,6 +185,7 @@ export default function Partes() {
                 <span className="stat-item"> M: {p.M}</span>
               </div>
 
+              {/*
               <div className="card-actions">
                 <button 
                   className="btn btn-edit"
@@ -199,6 +200,7 @@ export default function Partes() {
                   Eliminar
                 </button>
               </div>
+              */}
             </div>
           ))
         )}

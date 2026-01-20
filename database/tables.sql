@@ -66,7 +66,7 @@ CREATE TABLE dbo.CARRO (
         FOREIGN KEY (id_equipo) REFERENCES dbo.EQUIPO(id_equipo),
 
     CONSTRAINT FK_CARRO_CONDUCTOR
-        FOREIGN KEY (id_conductor) REFERENCES dbo.CONDUCTOR(id_usuario),
+        FOREIGN KEY (id_conductor) REFERENCES dbo.CONDUCTOR(id_usuario)
 
 );
 GO
@@ -319,6 +319,14 @@ CREATE TABLE dbo.INSTALA (
     -- Para instalar una parte, esa parte debe existir en el inventario del equipo (TIENE).
     CONSTRAINT FK_INSTALA_TIENE
         FOREIGN KEY (id_equipo, id_parte) REFERENCES dbo.TIENE(id_equipo, id_parte)
+);
+GO
+
+
+CREATE TABLE dbo.sessions (
+    sid NVARCHAR(255) NOT NULL PRIMARY KEY,
+    session NVARCHAR(MAX) NOT NULL,
+    expires DATETIME NULL
 );
 GO
 

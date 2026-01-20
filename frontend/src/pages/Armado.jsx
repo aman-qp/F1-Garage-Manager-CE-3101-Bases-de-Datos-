@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import '../styles/armado.css';
 import { useAuth } from '../context/AuthContext';
 
-
 const CATEGORIAS = [
   { id: 1, nombre: 'Unidad de potencia' },
   { id: 2, nombre: 'Paquete aerodinámico' },
@@ -20,12 +19,11 @@ export default function Armado() {
   const [conductores, setConductores] = useState([]);
   const { usuario } = useAuth();
 
-  
   // Modales
   const [modalCrearCarro, setModalCrearCarro] = useState(false);
   const [modalSeleccionarParte, setModalSeleccionarParte] = useState(false);
   const [modalAsignarConductor, setModalAsignarConductor] = useState(false);
-  
+
   // Estado para selección de parte
   const [categoriaActual, setCategoriaActual] = useState(null);
   const [partesDisponibles, setPartesDisponibles] = useState([]);
@@ -44,41 +42,42 @@ export default function Armado() {
   useEffect(() => {
     if (carroSeleccionado) {
       cargarSetup();
+    } else {
+      setSetup(null);
     }
   }, [carroSeleccionado]);
 
   async function cargarEquipos() {
-  try {
-    const res = await fetch('http://localhost:3001/api/equipos', {
-      credentials: 'include'
-    });
+    try {
+      const res = await fetch('http://localhost:3001/api/equipos', {
+        credentials: 'include'
+      });
 
-    if (res.ok) {
-      const data = await res.json();
+      if (res.ok) {
+        const data = await res.json();
 
-      // Engineer: solo su equipo
-      if (usuario?.rol === 'Engineer' && usuario?.id_equipo) {
-        const miEquipo = data.filter(e => e.id_equipo === usuario.id_equipo);
-        setEquipos(miEquipo);
-        setEquipoSeleccionado(usuario.id_equipo);
-        setCarroSeleccionado(null);
-        return;
+        // Engineer: solo su equipo
+        if (usuario?.rol === 'Engineer' && usuario?.id_equipo) {
+          const miEquipo = data.filter(e => e.id_equipo === usuario.id_equipo);
+          setEquipos(miEquipo);
+          setEquipoSeleccionado(usuario.id_equipo);
+          setCarroSeleccionado(null);
+          return;
+        }
+
+        // Admin: todos
+        setEquipos(data);
+        if (data.length > 0) {
+          setEquipoSeleccionado(data[0].id_equipo);
+        } else {
+          setCarroSeleccionado(null);
+          setSetup(null);
+        }
       }
-
-      // Admin: todos
-      setEquipos(data);
-      if (data.length > 0) {
-        setEquipoSeleccionado(data[0].id_equipo);
-      } else {
-        setCarroSeleccionado(null);
-        setSetup(null);
-      }
+    } catch (err) {
+      console.error('Error al cargar equipos:', err);
     }
-  } catch (err) {
-    console.error('Error al cargar equipos:', err);
   }
-}
-
 
   async function cargarCarros() {
     try {
@@ -86,11 +85,20 @@ export default function Armado() {
         `http://localhost:3001/api/carros/equipo/${equipoSeleccionado}`,
         { credentials: 'include' }
       );
+
       if (res.ok) {
         const data = await res.json();
         setCarros(data);
+
+        // Si no hay seleccionado, escoger el primero
         if (data.length > 0 && !carroSeleccionado) {
           setCarroSeleccionado(data[0].id_carro);
+        }
+
+        // Si ya no hay carros
+        if (data.length === 0) {
+          setCarroSeleccionado(null);
+          setSetup(null);
         }
       }
     } catch (err) {
@@ -140,8 +148,10 @@ export default function Armado() {
       if (res.ok) {
         const data = await res.json();
         setModalCrearCarro(false);
+
         await cargarCarros();
         setCarroSeleccionado(data.id_carro);
+
         alert('Carro creado exitosamente');
       } else {
         const data = await res.json();
@@ -155,13 +165,13 @@ export default function Armado() {
 
   async function abrirSeleccionParte(categoria) {
     setCategoriaActual(categoria);
-    
+
     try {
       const res = await fetch(
         `http://localhost:3001/api/inventario/${equipoSeleccionado}/categoria/${categoria.id}`,
         { credentials: 'include' }
       );
-      
+
       if (res.ok) {
         const data = await res.json();
         setPartesDisponibles(data);
@@ -239,10 +249,7 @@ export default function Armado() {
     try {
       const res = await fetch(
         `http://localhost:3001/api/carros/${carroSeleccionado}/finalizar`,
-        {
-          method: 'POST',
-          credentials: 'include'
-        }
+        { method: 'POST', credentials: 'include' }
       );
 
       if (res.ok) {
@@ -259,7 +266,71 @@ export default function Armado() {
     }
   }
 
+  async function eliminarCarro() {
+    if (!carroSeleccionado) return;
+
+    const ok = confirm(
+      '¿Está seguro de eliminar este carro?\n\n' +
+      '- Las partes instaladas volverán al inventario\n' +
+      '- El conductor quedará libre\n' +
+      '- Esta acción NO se puede deshacer'
+    );
+
+    if (!ok) return;
+
+    try {
+      const res = await fetch(
+        `http://localhost:3001/api/carros/${carroSeleccionado}`,
+        { method: 'DELETE', credentials: 'include' }
+      );
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alert(data.message || 'Error al eliminar carro');
+        return;
+      }
+
+      // Recargar carros y conductores
+      // Importante: primero limpiar selección actual (evita fetch de setup con id borrado)
+      const carroBorrado = carroSeleccionado;
+      setCarroSeleccionado(null);
+      setSetup(null);
+
+      // Pedir lista actualizada
+      const resCarros = await fetch(
+        `http://localhost:3001/api/carros/equipo/${equipoSeleccionado}`,
+        { credentials: 'include' }
+      );
+
+      let lista = [];
+      if (resCarros.ok) {
+        lista = await resCarros.json();
+      }
+
+      setCarros(lista);
+
+      if (lista.length > 0) {
+        // Si el que borraste era el seleccionado, seleccionar el primero disponible
+        const nuevo = lista[0].id_carro;
+        setCarroSeleccionado(nuevo);
+      } else {
+        // Ya no hay carros
+        setCarroSeleccionado(null);
+        setSetup(null);
+      }
+
+      await cargarConductores();
+
+      alert(data.message || `Carro #${carroBorrado} eliminado exitosamente`);
+    } catch (err) {
+      console.error('Error:', err);
+      alert('No se pudo conectar con la API');
+    }
+  }
+
   const equipoActual = equipos.find(e => e.id_equipo === equipoSeleccionado);
+
   const parteInstalada = (id_categoria) => {
     return setup?.partes.find(p => p.id_categoria === id_categoria);
   };
@@ -307,7 +378,7 @@ export default function Armado() {
           Crear Nuevo Carro
         </button>
       </div>
-      
+
       {/* Estado vacío: equipo sin carros */}
       {equipoSeleccionado && carros.length === 0 && (
         <div className="empty-carros">
@@ -344,27 +415,35 @@ export default function Armado() {
             <p>Estado: <strong>{setup.carro?.estado}</strong></p>
             <p>Conductor: {setup.carro?.nombre_conductor || 'Sin asignar'}</p>
             {setup.carro?.habilidad_h && <p>Habilidad: {setup.carro.habilidad_h}</p>}
-            
-            {setup.carro?.estado === 'Armando' && (
-              <div className="carro-acciones">
-                <button onClick={() => setModalAsignarConductor(true)} className="btn btn-secondary">
-                  {setup.carro?.nombre_conductor ? 'Cambiar Conductor' : 'Asignar Conductor'}
-                </button>
-                <button onClick={finalizarCarro} className="btn btn-success">
-                  Finalizar Carro
-                </button>
-              </div>
-            )}
+
+            <div className="carro-acciones">
+              {setup.carro?.estado === 'Armando' && (
+                <>
+                  <button onClick={() => setModalAsignarConductor(true)} className="btn btn-secondary">
+                    {setup.carro?.nombre_conductor ? 'Cambiar Conductor' : 'Asignar Conductor'}
+                  </button>
+                  <button onClick={finalizarCarro} className="btn btn-success">
+                    Finalizar Carro
+                  </button>
+                </>
+              )}
+
+              {/* Eliminar disponible en ambos estados */}
+              <button onClick={eliminarCarro} className="btn btn-danger">
+                Eliminar Carro
+              </button>
+            </div>
           </div>
 
           {/* Grid de Categorías */}
           <div className="categorias-grid">
             {CATEGORIAS.map(cat => {
               const parte = parteInstalada(cat.id);
+
               return (
                 <div key={cat.id} className="categoria-slot">
                   <h3>{cat.nombre}</h3>
-                  
+
                   {parte ? (
                     <div className="parte-instalada">
                       <p className="parte-nombre">{parte.nombre_parte}</p>
@@ -442,7 +521,7 @@ export default function Armado() {
         <div className="modal-overlay" onClick={() => setModalSeleccionarParte(false)}>
           <div className="modal modal-large" onClick={e => e.stopPropagation()}>
             <h3>Seleccionar {categoriaActual?.nombre}</h3>
-            
+
             {partesDisponibles.length === 0 ? (
               <p className="empty-message">No hay partes disponibles en el inventario</p>
             ) : (
@@ -481,7 +560,7 @@ export default function Armado() {
         <div className="modal-overlay" onClick={() => setModalAsignarConductor(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>Asignar Conductor</h3>
-            
+
             {conductores.filter(c => c.disponible || c.id_conductor === setup?.carro?.id_conductor).length === 0 ? (
               <p className="empty-message">No hay conductores disponibles</p>
             ) : (

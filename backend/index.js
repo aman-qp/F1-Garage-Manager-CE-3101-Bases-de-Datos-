@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const session = require('express-session');
 const bcrypt = require('bcrypt');
+const MSSQLStore = require('connect-mssql-v2');
+require('dotenv').config();
+
 const { sql, poolPromise } = require('./db');
 
 const app = express();
@@ -18,15 +21,29 @@ app.use(cors({
 app.use(express.json());
 
 // Configuración de sesiones
+const sessionStore = new MSSQLStore({
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  server: process.env.DB_SERVER,      
+  database: process.env.DB_NAME,     
+  options: {
+    encrypt: false,                   
+    trustServerCertificate: true      
+  },
+  table: 'SESSIONS'                   
+});
+
 app.use(session({
+  name: 'sid', 
   secret: process.env.SESSION_SECRET || 'dev_secret',
   resave: false,
   saveUninitialized: false,
+  store: sessionStore,                
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60 // 1 hora 
+    maxAge: 1000 * 60 * 60
   }
 }));
 
@@ -196,6 +213,81 @@ app.get('/api/usuarios', requireRole('Admin'), async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+
+// Actualizar usuario (Admin only)
+app.put('/api/usuarios/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nombre_usuario, nombre_completo, rol, id_equipo, contrasena } = req.body;
+
+    if (!nombre_usuario || !nombre_completo || !rol) {
+      return res.status(400).json({ message: 'Faltan campos requeridos' });
+    }
+
+    if (!VALID_ROLES.includes(rol)) {
+      return res.status(400).json({ message: 'Rol inválido' });
+    }
+
+    const pool = await poolPromise;
+
+    // Si viene contraseña, la hasheamos; si no, se mantiene
+    let hashedPassword = null;
+    if (contrasena && String(contrasena).trim().length > 0) {
+      hashedPassword = await bcrypt.hash(contrasena, 10);
+    }
+
+    await pool.request()
+      .input('id_usuario', sql.Int, Number(id))
+      .input('id_equipo', sql.Int, rol === 'Engineer' ? (id_equipo ?? null) : null)
+      .input('nombre_usuario', sql.VarChar(80), nombre_usuario)
+      .input('nombre_completo', sql.VarChar(100), nombre_completo)
+      .input('rol', sql.VarChar(20), rol)
+      .input('contrasena_hash', sql.VarChar(255), hashedPassword) // puede ser null
+      .execute('sp_ActualizarUsuario');
+
+    res.json({ message: 'Usuario actualizado correctamente' });
+  } catch (err) {
+    console.error('Error al actualizar usuario:', err);
+
+    if (err.message && err.message.includes('ya existe')) {
+      return res.status(409).json({ message: err.message });
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Eliminar usuario (Admin only)
+app.delete('/api/usuarios/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_usuario', sql.Int, Number(id))
+      .execute('dbo.sp_EliminarUsuario');
+
+    const mensaje = result?.recordset?.[0]?.mensaje;
+
+    res.json({ message: mensaje || 'Usuario eliminado exitosamente' });
+  } catch (err) {
+    console.error('Error al eliminar usuario:', err);
+
+    if (err.message && err.message.includes('asignado a un carro')) {
+      return res.status(400).json({
+        message: 'No se puede eliminar: el conductor está asignado a un carro'
+      });
+    }
+
+    if (err.message && err.message.includes('no existe')) {
+      return res.status(404).json({ message: 'El usuario no existe' });
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+
 
 // ===============================
 // PERFIL DEL CONDUCTOR (DRIVER)
@@ -574,40 +666,28 @@ app.get('/api/categorias', async (req, res) => {
 app.get('/api/inventario/:id_equipo', requireRole('Admin', 'Engineer'), async (req, res) => {
   try {
     const { id_equipo } = req.params;
-    
-    // Engineer solo puede ver su propio inventario
+
     if (req.session.rol === 'Engineer' && req.session.id_equipo != id_equipo) {
       return res.status(403).json({ message: 'Acceso denegado' });
     }
 
     const pool = await poolPromise;
     const result = await pool.request()
-      .input('id_equipo', sql.Int, id_equipo)
-      .query(`
-        SELECT 
-          t.id_equipo,
-          t.id_parte,
-          pa.nombre as nombre_parte,
-          c.tipo_de_parte as categoria,
-          t.cantidad,
-          t.fecha_adquirido as fecha_adquisicion,
-          pa.potencia as p,
-          pa.aerodinamica as a,
-          pa.manejo as m
-        FROM dbo.TIENE t
-        JOIN dbo.PARTE pa ON pa.id_parte = t.id_parte
-        JOIN dbo.CATEGORIA c ON c.id_categoria = pa.id_categoria
-        WHERE t.id_equipo = @id_equipo
-          AND t.cantidad > 0
-        ORDER BY c.tipo_de_parte, pa.nombre
-      `);
-    
+      .input('id_equipo', sql.Int, Number(id_equipo))
+      .execute('dbo.sp_ObtenerInventarioEquipo');
+
     res.json(result.recordset);
   } catch (err) {
     console.error('Error al obtener inventario:', err);
+
+    if (err.message && err.message.includes('El equipo no existe')) {
+      return res.status(404).json({ message: 'El equipo no existe' });
+    }
+
     res.status(500).json({ message: 'Error al obtener inventario' });
   }
 });
+
 
 // POST /api/compras - Flujo completo de compra (crear + agregar + confirmar)
 app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
@@ -935,20 +1015,34 @@ app.get('/api/carros/:id/setup', requireAuth, async (req, res) => {
 
     const pool = await poolPromise;
     const result = await pool.request()
-      .input('id_carro', sql.Int, id)
+      .input('id_carro', sql.Int, Number(id))
       .execute('sp_ObtenerSetupCarro');
 
-    // Resultado tiene 3 recordsets: info carro, partes instaladas, totales
+    const carroInfo = result.recordsets?.[0]?.[0] || null;
+
+    if (!carroInfo) {
+      return res.status(404).json({ message: 'El carro no existe' });
+    }
+
+    if (req.session.rol === 'Engineer' && Number(carroInfo.id_equipo) !== Number(req.session.id_equipo)) {
+      return res.status(403).json({ message: 'Acceso denegado' });
+    }
+
     res.json({
-      carro: result.recordsets[0][0] || null,
+      carro: carroInfo,
       partes: result.recordsets[1] || [],
-      totales: result.recordsets[2][0] || { total_potencia: 0, total_aerodinamica: 0, total_manejo: 0 }
+      totales: result.recordsets[2]?.[0] || {
+        total_potencia: 0,
+        total_aerodinamica: 0,
+        total_manejo: 0
+      }
     });
   } catch (err) {
     console.error('Error al obtener setup:', err);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+
 
 // Listar partes disponibles del inventario por categoría
 app.get('/api/inventario/:id_equipo/categoria/:id_categoria', requireAuth, async (req, res) => {
@@ -1079,6 +1173,38 @@ app.post('/api/carros/:id/finalizar', requireRole('Admin', 'Engineer'), async (r
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+
+// Eliminar carro (Admin, Engineer)
+app.delete('/api/carros/:id', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const pool = await poolPromise;
+    const result = await pool.request()
+      .input('id_carro', sql.Int, Number(id))
+      .execute('dbo.sp_EliminarCarro');
+
+    // por si querés devolver el mensaje del SP
+    const mensaje = result?.recordset?.[0]?.mensaje;
+
+    res.json({ message: mensaje || 'Carro eliminado exitosamente' });
+  } catch (err) {
+    console.error('Error al eliminar carro:', err);
+
+    if (err.message && err.message.includes('simulaciones')) {
+      return res.status(400).json({
+        message: 'No se puede eliminar: el carro ha participado en simulaciones'
+      });
+    }
+
+    if (err.message && err.message.includes('no existe')) {
+      return res.status(404).json({ message: 'El carro no existe' });
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
 
 // =============================================
 // INICIAR SERVIDOR
