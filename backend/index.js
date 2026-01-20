@@ -136,7 +136,7 @@ app.post('/api/auth/logout', (req, res) => {
     if (err) {
       return res.status(500).json({ message: 'Error al cerrar sesión' });
     }
-    res.clearCookie('connect.sid');
+    res.clearCookie('sid');
     res.json({ message: 'Logout exitoso' });
   });
 });
