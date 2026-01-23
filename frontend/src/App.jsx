@@ -14,6 +14,7 @@ import Armado from './pages/Armado';
 import Presupuesto from './pages/Presupuesto';
 import Tienda from './pages/Tienda';
 import PerfilDriver from './pages/PerfilDriver';
+import Simulacion from './pages/Simulacion';
 
 export default function App() {
   const { isAuthenticated, usuario, loading, logout } = useAuth();
@@ -75,7 +76,8 @@ export default function App() {
               <Link to="/presupuesto">Presupuesto</Link> |{' '}
               <Link to="/tienda">Tienda</Link> |{' '}
               <Link to="/inventario">Inventario</Link> |{' '}
-              <Link to="/armado">Armado</Link>
+              <Link to="/armado">Armado</Link>|{' '}
+              <Link to="/simulacion">Simulación</Link>
             </>
           )}
         </div>
@@ -198,6 +200,16 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/simulacion"
+          element={
+            <ProtectedRoute roles={['Admin', 'Engineer']}>
+              <Simulacion />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* 404 */}
         <Route

@@ -1,0 +1,44 @@
+.simulacion-container {
+  background: linear-gradient(145deg, #181818, #222);
+  padding: 2rem;
+  border-radius: 18px;
+  color: white;
+}
+
+.simulacion-form {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: flex-end;
+}
+
+.simulacion-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.9rem;
+}
+
+.simulacion-form input,
+.simulacion-form select {
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: #0f0f0f;
+  color: white;
+  border: 1px solid #333;
+}
+
+.simulacion-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.simulacion-table th {
+  background: #c40303;
+  padding: 0.75rem;
+}
+
+.simulacion-table td {
+  padding: 0.75rem;
+  text-align: center;
+  border-bottom: 1px solid #7a4141;
+}

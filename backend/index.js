@@ -20,6 +20,10 @@ app.use(cors({
 }));
 app.use(express.json());
 
+//console.log('DB_SERVER:', process.env.DB_SERVER);
+//console.log('DB_USER:', process.env.DB_USER);
+//console.log('DB_NAME:', process.env.DB_NAME);
+
 // Configuración de sesiones
 const sessionStore = new MSSQLStore({
   user: process.env.DB_USER,
@@ -1204,6 +1208,28 @@ app.delete('/api/carros/:id', requireRole('Admin', 'Engineer'), async (req, res)
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+//======= SIMULACION ===============
+const simulacionRoutes = require('./simulacion');
+app.use('/api/simulacion', simulacionRoutes);
+
+//======= CIRCUITOS =================
+app.get('/api/circuitos', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const pool = await poolPromise;
+    const result = await pool.request().query(`
+      SELECT id_circuito, nombre, distancia_total, cantidad_curvas
+      FROM dbo.CIRCUITO
+      ORDER BY nombre
+    `);
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error cargando circuitos:', err);
+    res.status(500).json({ message: 'Error cargando circuitos' });
+  }
+});
+
+
 
 
 // =============================================
