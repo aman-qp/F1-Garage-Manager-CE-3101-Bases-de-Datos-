@@ -1,44 +1,157 @@
 .simulacion-container {
-  background: linear-gradient(145deg, #181818, #222);
   padding: 2rem;
-  border-radius: 18px;
+  background: #111;
+  min-height: 100vh;
   color: white;
 }
 
+.simulacion-container h2 {
+  color: #ef4444;
+  font-size: 2.5rem;
+  font-weight: 900;
+  margin-bottom: 2rem;
+}
+
+/* Formulario */
 .simulacion-form {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  align-items: flex-end;
+  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(220,38,38,0.4);
+  margin-bottom: 2rem;
 }
 
 .simulacion-form label {
-  display: flex;
-  flex-direction: column;
-  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 1rem;
+  font-weight: bold;
 }
 
-.simulacion-form input,
-.simulacion-form select {
-  padding: 0.5rem;
-  border-radius: 6px;
-  background: #0f0f0f;
+.simulacion-form select,
+.simulacion-form input {
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: none;
+  background: #1f1f1f;
   color: white;
-  border: 1px solid #333;
+  margin-top: 0.5rem;
 }
 
+.btn-primary {
+  margin-top: 1rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(95deg, #2e9b13, #02851e);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.error-msg {
+  margin-top: 1rem;
+  color: #fecaca;
+  font-weight: bold;
+}
+
+/* =======================
+   ANIMACIÓN DE CARRERA
+======================= */
+
+.race-track {
+  margin-top: 2rem;
+  background: #0a0a0a;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 2px solid #dc2626;
+}
+
+.track-lane {
+  position: relative;
+  height: 64px; /*  height: 64px; */
+  margin-bottom: 8px;
+  background: repeating-linear-gradient(
+    to right,
+    #222,
+    #222 20px,
+    #111 20px,
+    #111 40px
+  );
+  overflow: hidden;
+  border-radius: 6px;
+}
+
+
+/*  CARROS */
+.car {
+  position: absolute;
+  right: -80px;               /* inicia (derecha) */
+  top: 8px;
+  font-size: 3rem;
+  animation-name: race-rtl;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+
+/* desfases */
+.car1 { animation-delay: 0s }
+.car2 { animation-delay: 0.4s }
+.car3 { animation-delay: 0.8s }
+.car4 { animation-delay: 1.2s }
+
+
+.car {
+  animation-duration: 4s;
+}
+
+
+@keyframes race-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-130vw);
+  }
+}
+/* =======================
+   TABLA RESULTADOS
+======================= */
 .simulacion-table {
   width: 100%;
   border-collapse: collapse;
+  background: #1f1f1f;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 .simulacion-table th {
-  background: #c40303;
-  padding: 0.75rem;
+  background: linear-gradient(135deg, #7f1d1d, #b91c1c);
+  padding: 1rem;
+  font-size: 1rem;
+  text-align: left;
 }
 
 .simulacion-table td {
-  padding: 0.75rem;
-  text-align: center;
-  border-bottom: 1px solid #7a4141;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #333;
+}
+
+.simulacion-table tr:nth-child(even) td {
+  background: #262626;
+}
+
+.simulacion-table tr:hover td {
+  background: #333;
+}
+
+.simulacion-table td:first-child {
+  font-weight: bold;
+  color: #facc15;
 }

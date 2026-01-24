@@ -20,7 +20,18 @@ router.post('/', async (req, res) => {
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+
+    //Error controlado 
+    if (err.code === 'EREQUEST') {
+      return res.status(400).json({
+        error: err.originalError?.info?.message 
+          || 'Error en la simulación de la carrera'
+      });
+    }
+    //Error inesperado
+    return res.status(500).json({
+      error: 'Error interno del servidor'
+    });
   }
 });
 
