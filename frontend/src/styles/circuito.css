@@ -1,0 +1,154 @@
+.circuitos-page {
+  min-height: 100vh;
+  padding: 2rem;
+  background: #0f0f0f;
+  color: #fff;
+}
+
+.circuitos-page h2 {
+  font-size: 2.2rem;
+  font-weight: 900;
+  margin-bottom: 1.5rem;
+  color: #ef4444;
+}
+
+.card {
+  background: #151515;
+  border: 1px solid #2a2a2a;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+}
+
+.card h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.form .grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+label {
+  display: block;
+  font-weight: 700;
+}
+
+input {
+  margin-top: 0.4rem;
+  width: 100%;
+  padding: 0.75rem;
+  border-radius: 10px;
+  border: 1px solid #2f2f2f;
+  background: #0f0f0f;
+  color: #fff;
+  outline: none;
+}
+
+input:focus {
+  border-color: #ef4444;
+}
+
+.btn {
+  padding: 0.65rem 1rem;
+  border: 1px solid #2f2f2f;
+  border-radius: 10px;
+  background: #111;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.btn:hover {
+  border-color: #ef4444;
+}
+
+.btn.primary {
+  background: linear-gradient(95deg, #2e9b13, #02851e);
+  border: none;
+}
+
+.btn.danger {
+  background: linear-gradient(95deg, #7f1d1d, #b91c1c);
+  border: none;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.msg {
+  margin-top: 1rem;
+  font-weight: 800;
+}
+
+.msg.ok {
+  color: #86efac;
+}
+
+.msg.err {
+  color: #fecaca;
+}
+
+.table-wrap {
+  width: 100%;
+  overflow: auto;
+  margin-top: 1rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.9rem;
+  background: #1f1f1f;
+  border-bottom: 1px solid #2f2f2f;
+  font-size: 0.95rem;
+}
+
+.table td {
+  padding: 0.85rem 0.9rem;
+  border-bottom: 1px solid #242424;
+}
+
+.table tr:hover td {
+  background: #191919;
+}
+
+.acciones {
+  white-space: nowrap;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.empty {
+  text-align: center;
+  color: #bbb;
+  padding: 1.2rem;
+}
+
+@media (max-width: 900px) {
+  .form .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .acciones {
+    flex-wrap: wrap;
+  }
+}

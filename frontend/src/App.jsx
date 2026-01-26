@@ -15,6 +15,7 @@ import Presupuesto from './pages/Presupuesto';
 import Tienda from './pages/Tienda';
 import PerfilDriver from './pages/PerfilDriver';
 import Simulacion from './pages/Simulacion';
+import CircuitosAdmin from './pages/Circuito';
 
 export default function App() {
   const { isAuthenticated, usuario, loading, logout } = useAuth();
@@ -68,6 +69,8 @@ export default function App() {
                   <Link to="/usuarios">Usuarios</Link> |{' '}
                   <Link to="/equipos">Equipos</Link> |{' '}
                   <Link to="/partes">Partes</Link> |{' '}
+                  <Link to="/circuito">Circuitos</Link> |{' '}
+                  <Link to="/simulacion">Simulación</Link> |{' '}
                 </>
               )}
 
@@ -76,8 +79,7 @@ export default function App() {
               <Link to="/presupuesto">Presupuesto</Link> |{' '}
               <Link to="/tienda">Tienda</Link> |{' '}
               <Link to="/inventario">Inventario</Link> |{' '}
-              <Link to="/armado">Armado</Link>|{' '}
-              <Link to="/simulacion">Simulación</Link>
+              <Link to="/armado">Armado</Link> |{' '}
             </>
           )}
         </div>
@@ -151,6 +153,15 @@ export default function App() {
           element={
             <ProtectedRoute roles={['Admin']}>
               <Partes />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/circuito"
+          element={
+            <ProtectedRoute roles={['Admin']}>
+              <CircuitosAdmin />
             </ProtectedRoute>
           }
         />

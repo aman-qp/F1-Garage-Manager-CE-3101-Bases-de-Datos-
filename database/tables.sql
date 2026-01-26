@@ -330,5 +330,23 @@ CREATE TABLE dbo.sessions (
 );
 GO
 
+CREATE TABLE dbo.SIMULACION_SETUP (
+  id_simulacion INT NOT NULL,
+  id_carro INT NOT NULL,
+  id_categoria INT NOT NULL,
+  id_parte INT NOT NULL,
+
+  potencia INT NOT NULL,
+  aerodinamica INT NOT NULL,
+  manejo INT NOT NULL,
+
+  CONSTRAINT PK_SIM_SETUP PRIMARY KEY (id_simulacion, id_carro, id_categoria),
+  CONSTRAINT FK_SIM_SETUP_SIM FOREIGN KEY (id_simulacion) REFERENCES dbo.SIMULACION(id_simulacion),
+  CONSTRAINT FK_SIM_SETUP_CARRO FOREIGN KEY (id_carro) REFERENCES dbo.CARRO(id_carro),
+  CONSTRAINT FK_SIM_SETUP_CAT FOREIGN KEY (id_categoria) REFERENCES dbo.CATEGORIA(id_categoria),
+  CONSTRAINT FK_SIM_SETUP_PARTE_CAT FOREIGN KEY (id_parte, id_categoria) REFERENCES dbo.PARTE(id_parte, id_categoria),
+);
+GO
+
 PRINT 'Tablas creadas exitosamente.';
 GO

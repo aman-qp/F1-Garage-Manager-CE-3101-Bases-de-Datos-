@@ -1208,28 +1208,109 @@ app.delete('/api/carros/:id', requireRole('Admin', 'Engineer'), async (req, res)
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
+
 //======= SIMULACION ===============
 const simulacionRoutes = require('./simulacion');
-app.use('/api/simulacion', simulacionRoutes);
+app.use('/api/simulacion', requireRole('Admin','Engineer'), simulacionRoutes);
 
 //======= CIRCUITOS =================
-app.get('/api/circuitos', requireRole('Admin', 'Engineer'), async (req, res) => {
-  try {
-    const pool = await poolPromise;
-    const result = await pool.request().query(`
-      SELECT id_circuito, nombre, distancia_total, cantidad_curvas
-      FROM dbo.CIRCUITO
-      ORDER BY nombre
-    `);
 
-    res.json(result.recordset);
+// Listar circuitos
+app.get('/api/circuitos', requireRole('Admin'), async (req, res) => {
+  try {
+    const pool = await poolPromise
+    const result = await pool.request().execute('dbo.sp_Circuitos_Listar')
+    res.json(result.recordset)
   } catch (err) {
-    console.error('Error cargando circuitos:', err);
-    res.status(500).json({ message: 'Error cargando circuitos' });
+    console.error('Error listando circuitos:', err)
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
+// Crear circuito
+app.post('/api/circuitos', requireRole('Admin'), async (req, res) => {
+  try {
+    const { nombre, distancia_total, cantidad_curvas } = req.body
+
+    const pool = await poolPromise
+    const result = await pool.request()
+      .input('nombre', sql.VarChar(120), nombre)
+      .input('distancia_total', sql.Decimal(10,2), distancia_total)
+      .input('cantidad_curvas', sql.Int, cantidad_curvas)
+      .execute('dbo.sp_Circuitos_Crear')
+
+    res.status(201).json({
+      message: 'Circuito creado',
+      id_circuito: result.recordset[0].id_circuito
+    })
+  } catch (err) {
+    console.error('Error creando circuito:', err)
+
+    // Duplicado por UNIQUE (nombre)
+    if (String(err.message).includes('UQ_CIRCUITO_nombre')) {
+      return res.status(409).json({ message: 'Ya existe un circuito con ese nombre' })
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
+// Actualizar circuito
+app.put('/api/circuitos/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params
+    const { nombre, distancia_total, cantidad_curvas } = req.body
+
+    const pool = await poolPromise
+    await pool.request()
+      .input('id_circuito', sql.Int, Number(id))
+      .input('nombre', sql.VarChar(120), nombre)
+      .input('distancia_total', sql.Decimal(10,2), distancia_total)
+      .input('cantidad_curvas', sql.Int, cantidad_curvas)
+      .execute('dbo.sp_Circuitos_Actualizar')
+
+    res.json({ message: 'Circuito actualizado' })
+  } catch (err) {
+    console.error('Error actualizando circuito:', err)
+
+    if (String(err.message).includes('UQ_CIRCUITO_nombre')) {
+      return res.status(409).json({ message: 'Ya existe un circuito con ese nombre' })
+    }
+
+    if (String(err.message).includes('no existe')) {
+      return res.status(404).json({ message: 'El circuito no existe' })
+    }
+
+    res.status(500).json({ message: 'Error interno del servidor' })
+  }
+})
+
+// Eliminar circuito
+app.delete('/api/circuitos/:id', requireRole('Admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('id_circuito', sql.Int, Number(id))
+      .execute('dbo.sp_Circuitos_Eliminar');
+
+    res.json({ message: result.recordset?.[0]?.mensaje || 'Circuito eliminado' });
+
+  } catch (err) {
+    console.error('Error eliminando circuito:', err);
+
+    // Cuando es THROW desde SQL Server suele venir en originalError.info.message
+    const msg = err.originalError?.info?.message || err.message || 'Error eliminando circuito';
+
+    // Si es error controlado (THROW), devolvemos 400 con mensaje legible
+    if (err.code === 'EREQUEST') {
+      return res.status(400).json({ message: msg });
+    }
+
+    return res.status(500).json({ message: 'Error interno del servidor' });
   }
 });
-
-
 
 
 // =============================================
