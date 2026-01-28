@@ -1251,11 +1251,16 @@ app.put('/api/carros/:id/reabrir', requireRole('Admin', 'Engineer'), async (req,
 });
 
 
-//======= SIMULACION ===============
+// =============================================
+// SIMULACIONES
+// =============================================
 const simulacionRoutes = require('./simulacion');
 app.use('/api/simulacion', requireRole('Admin','Engineer'), simulacionRoutes);
 
-//======= CIRCUITOS =================
+
+// =============================================
+// CIRCUITOS
+// =============================================
 
 // Listar circuitos
 app.get('/api/circuitos', requireRole('Admin'), async (req, res) => {

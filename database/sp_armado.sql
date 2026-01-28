@@ -457,7 +457,7 @@ END;
 GO
 
 -- =============================================
--- SP 10: Listar carros finalizados (opcionalmente por equipo)      
+-- SP 10: Listar carros finalizados     
 -- =============================================
 
 CREATE OR ALTER PROCEDURE dbo.sp_ListarCarrosFinalizados
