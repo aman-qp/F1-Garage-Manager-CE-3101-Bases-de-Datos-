@@ -90,12 +90,10 @@ export default function Armado() {
         const data = await res.json();
         setCarros(data);
 
-        // Si no hay seleccionado, escoger el primero
         if (data.length > 0 && !carroSeleccionado) {
           setCarroSeleccionado(data[0].id_carro);
         }
 
-        // Si ya no hay carros
         if (data.length === 0) {
           setCarroSeleccionado(null);
           setSetup(null);
@@ -266,6 +264,43 @@ export default function Armado() {
     }
   }
 
+  // Reabrir carro finalizado (volver a Armando)
+  async function editarCarro() {
+    if (!carroSeleccionado) return;
+
+    const ok = confirm(
+      'Esto reabrirá el carro (Finalizado → Armando) para poder cambiar partes.\n\n' +
+      '¿Deseas continuar?'
+    );
+    if (!ok) return;
+
+    try {
+      const res = await fetch(
+        `http://localhost:3001/api/carros/${carroSeleccionado}/reabrir`,
+        {
+          method: 'PUT',              // ✅ backend usa PUT
+          credentials: 'include'
+        }
+      );
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        alert(data.message || 'No se pudo reabrir el carro');
+        return;
+      }
+
+      await cargarCarros();
+      await cargarSetup();
+      await cargarConductores();
+      alert(data.message || 'Carro reabierto. Ahora puedes modificar partes.');
+    } catch (err) {
+      console.error('Error:', err);
+      alert('No se pudo conectar con la API');
+    }
+  }
+
+
   async function eliminarCarro() {
     if (!carroSeleccionado) return;
 
@@ -291,13 +326,10 @@ export default function Armado() {
         return;
       }
 
-      // Recargar carros y conductores
-      // Importante: primero limpiar selección actual (evita fetch de setup con id borrado)
       const carroBorrado = carroSeleccionado;
       setCarroSeleccionado(null);
       setSetup(null);
 
-      // Pedir lista actualizada
       const resCarros = await fetch(
         `http://localhost:3001/api/carros/equipo/${equipoSeleccionado}`,
         { credentials: 'include' }
@@ -311,11 +343,9 @@ export default function Armado() {
       setCarros(lista);
 
       if (lista.length > 0) {
-        // Si el que borraste era el seleccionado, seleccionar el primero disponible
         const nuevo = lista[0].id_carro;
         setCarroSeleccionado(nuevo);
       } else {
-        // Ya no hay carros
         setCarroSeleccionado(null);
         setSetup(null);
       }
@@ -379,7 +409,6 @@ export default function Armado() {
         </button>
       </div>
 
-      {/* Estado vacío: equipo sin carros */}
       {equipoSeleccionado && carros.length === 0 && (
         <div className="empty-carros">
           <div className="empty-icon">🚗</div>
@@ -388,7 +417,6 @@ export default function Armado() {
         </div>
       )}
 
-      {/* Selector de Carro */}
       {carros.length > 0 && (
         <div className="selector-carro">
           <label>Seleccionar Carro:</label>
@@ -406,10 +434,8 @@ export default function Armado() {
         </div>
       )}
 
-      {/* Panel Principal */}
       {setup && (
         <div className="armado-panel">
-          {/* Info del Carro */}
           <div className="carro-info">
             <h2>Carro #{setup.carro?.id_carro}</h2>
             <p>Estado: <strong>{setup.carro?.estado}</strong></p>
@@ -428,14 +454,19 @@ export default function Armado() {
                 </>
               )}
 
-              {/* Eliminar disponible en ambos estados */}
+              {/* si está Finalizado, permitir reabrir para editar */}
+              {setup.carro?.estado === 'Finalizado' && (
+                <button onClick={editarCarro} className="btn btn-secondary">
+                  Editar Carro
+                </button>
+              )}
+
               <button onClick={eliminarCarro} className="btn btn-danger">
                 Eliminar Carro
               </button>
             </div>
           </div>
 
-          {/* Grid de Categorías */}
           <div className="categorias-grid">
             {CATEGORIAS.map(cat => {
               const parte = parteInstalada(cat.id);
@@ -470,7 +501,6 @@ export default function Armado() {
             })}
           </div>
 
-          {/* Resumen de Rendimiento */}
           <div className="resumen-rendimiento">
             <h3>Resumen de Rendimiento</h3>
             <div className="stats-totales">

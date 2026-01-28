@@ -354,7 +354,7 @@ export default function Usuarios() {
               )}
 
               <div className="modal-actions">
-                <button type="button" className="btn" onClick={() => setModalOpen(false)}>
+                <button type="button" className="btn btn-cancel" onClick={() => setModalOpen(false)}>
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-add">
@@ -435,7 +435,7 @@ export default function Usuarios() {
               )}
 
               <div className="modal-actions">
-                <button type="button" className="btn" onClick={() => setEditOpen(false)}>
+                <button type="button" className="btn btn-cancel" onClick={() => setEditOpen(false)}>
                   Cancelar
                 </button>
                 <button type="submit" className="btn btn-add">

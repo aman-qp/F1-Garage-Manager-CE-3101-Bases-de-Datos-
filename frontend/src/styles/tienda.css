@@ -132,7 +132,7 @@
   padding: 0.625rem 1.25rem;
   border: 2px solid #444;
   border-radius: 24px;
-  background: #1a1a1a;
+  background: #1a1a1a!important;
   color: white;
   cursor: pointer;
   transition: all 0.3s;
@@ -142,15 +142,15 @@
 
 .filtro-btn:hover {
   border-color: #e74c3c;
-  background: rgba(231,76,60,0.1);
+  background: rgba(231,76,60,0.1)!important;
   transform: translateY(-1px);
 }
 
 .filtro-btn.active {
-  background: #e74c3c;
+  background: #e74c3c!important;
   color: white;
   border-color: #e74c3c;
-  box-shadow: 0 4px 8px rgba(231,76,60,0.3);
+  box-shadow: 0 4px 8px rgba(231,76,60,0.3)
 }
 
 .catalogo-section {
@@ -171,7 +171,7 @@
 }
 
 .parte-card {
-  background: rgba(26,26,26,0.9);
+  background: rgba(26,26,26,0.9)!important;
   border-radius: 16px;
   padding: 1.75rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -203,7 +203,7 @@
 }
 
 .categoria-badge {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)!important;
   color: white;
   padding: 0.375rem 0.875rem;
   border-radius: 16px;
@@ -220,7 +220,7 @@
   gap: 0.625rem;
   margin-bottom: 1.25rem;
   padding: 1.25rem;
-  background: rgba(231,76,60,0.1);
+  background: rgba(231,76,60,0.1)!important;
   border-radius: 12px;
   border-left: 4px solid #e74c3c;
 }
@@ -279,7 +279,7 @@
 
 .btn-comprar {
   padding: 0.875rem 1.75rem;
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)!important;
   color: white;
   border: none;
   border-radius: 10px;
@@ -291,20 +291,20 @@
 }
 
 .btn-comprar:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%)!important;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(231,76,60,0.4);
 }
 
 .btn-comprar:disabled {
-  background: #555;
+  background: #555 !important;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
 }
 
 .inventario-section {
-  background: rgba(26,26,26,0.8);
+  background: rgba(26,26,26,0.8)!important;
   padding: 2rem;
   border-radius: 16px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
@@ -347,7 +347,7 @@
 }
 
 .inventario-item {
-  background: rgba(231,76,60,0.1);
+  background: rgba(231,76,60,0.1)!important;
   padding: 1.25rem;
   border-radius: 12px;
   border-left: 5px solid #e74c3c;
@@ -373,7 +373,7 @@
 }
 
 .cantidad-badge {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)!important;
   color: white;
   padding: 0.375rem 0.75rem;
   border-radius: 16px;
@@ -389,7 +389,7 @@
 }
 
 .categoria-small {
-  background: rgba(231,76,60,0.2);
+  background: rgba(231,76,60,0.2)!important;
   color: #e74c3c;
   padding: 0.25rem 0.625rem;
   border-radius: 10px;
@@ -514,7 +514,7 @@
   font-size: 1.05rem;
   transition: all 0.3s;
   font-weight: 600;
-  background: #0a0a0a;
+  background: #0a0a0a!important;
   color: white;
 }
 
@@ -525,7 +525,7 @@
 }
 
 .input-field:disabled {
-  background: #1a1a1a;
+  background: #1a1a1a!important;
   cursor: not-allowed;
 }
 
@@ -558,14 +558,14 @@
 .validacion-presupuesto {
   margin: 1.25rem 0;
   padding: 1rem;
-  border-radius: 10px;
+  border-radius: 10px!important;
   text-align: center;
   font-weight: 700;
   font-size: 1rem;
 }
 
 .validacion-presupuesto .error {
-  background: rgba(231,76,60,0.1);
+  background: rgba(231,76,60,0.1)!important;
   color: #e74c3c;
   margin: 0;
   border: 2px solid #e74c3c;
@@ -574,7 +574,7 @@
 }
 
 .validacion-presupuesto .success {
-  background: rgba(46,204,113,0.1);
+  background: rgba(46,204,113,0.1)!important;
   color: #2ecc71;
   margin: 0;
   border: 2px solid #2ecc71;
@@ -600,32 +600,32 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%) !important;
   color: white;
   box-shadow: 0 4px 12px rgba(231,76,60,0.4);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%) !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(231,76,60,0.5);
 }
 
 .btn-primary:disabled {
-  background: #555;
+  background: #555 !important;
   cursor: not-allowed;
   box-shadow: none;
   transform: none;
 }
 
 .btn-secondary {
-  background: #555;
+  background: #555 !important;
   color: white;
   box-shadow: 0 4px 12px rgba(85,85,85,0.3);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: #666;
+  background: #666 !important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(85,85,85,0.4);
 }

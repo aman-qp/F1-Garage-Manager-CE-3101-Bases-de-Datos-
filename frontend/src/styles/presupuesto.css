@@ -114,17 +114,17 @@
 }
 
 .btn-primary {
-  background: linear-gradient(95deg, #2563eb, #1e40af);
+  background: linear-gradient(95deg, #2563eb, #1e40af)!important;
   color: white;
 }
 
 .btn-success {
-  background: linear-gradient(95deg, #059669, #047857);
+  background: linear-gradient(95deg, #059669, #047857)!important;
   color: white;
 }
 
 .btn-secondary {
-  background: #555;
+  background: #555!important;
   color: white;
 }
 

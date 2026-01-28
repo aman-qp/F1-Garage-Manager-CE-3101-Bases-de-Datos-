@@ -226,9 +226,6 @@ export default function CircuitosAdmin() {
       <div className="card">
         <div className="header-row">
           <h3>Lista de circuitos</h3>
-          <button className="btn" onClick={cargar} disabled={loading}>
-            {loading ? "Cargando..." : "Recargar"}
-          </button>
         </div>
 
         <div className="table-wrap">
@@ -287,7 +284,7 @@ export default function CircuitosAdmin() {
                     <td className="acciones">
                       {!editando ? (
                         <>
-                          <button className="btn" onClick={() => iniciarEdicion(c)}>
+                          <button className="btn edit" onClick={() => iniciarEdicion(c)}>
                             Editar
                           </button>
                           <button className="btn danger" onClick={() => eliminarCircuito(c.id_circuito)}>

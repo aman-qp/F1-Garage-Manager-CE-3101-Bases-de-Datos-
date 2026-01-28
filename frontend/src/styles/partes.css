@@ -106,25 +106,25 @@
 }
 
 .btn-edit {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%)!important;
   color: white;
   box-shadow: 0 4px 8px rgba(52,152,219,0.3);
 }
 
 .btn-edit:hover {
-  background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+  background: linear-gradient(135deg, #2980b9 0%, #21618c 100%)!important;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(52,152,219,0.4);
 }
 
 .btn-delete {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)!important;
   color: white;
   box-shadow: 0 4px 8px rgba(231,76,60,0.3);
 }
 
 .btn-delete:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%)!important;
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(231,76,60,0.4);
 }
@@ -134,7 +134,7 @@
   bottom: 2rem;
   right: 2rem;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+  background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)!important;
   color: white;
   border: none;
   border-radius: 50px;
@@ -147,7 +147,7 @@
 }
 
 .btn-add:hover {
-  background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+  background: linear-gradient(135deg, #27ae60 0%, #229954 100%)!important;
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(46,204,113,0.5);
 }
@@ -257,25 +257,25 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%)!important;
   color: white;
   box-shadow: 0 4px 12px rgba(231,76,60,0.4);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  background: linear-gradient(135deg, #c0392b 0%, #a93226 100%)!important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(231,76,60,0.5);
 }
 
 .btn-secondary {
-  background: #555;
+  background: #555!important;
   color: white;
   box-shadow: 0 4px 12px rgba(85,85,85,0.3);
 }
 
 .btn-secondary:hover {
-  background: #666;
+  background: #666!important;
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(85,85,85,0.4);
 }

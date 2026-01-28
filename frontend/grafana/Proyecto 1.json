@@ -1,0 +1,140 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 3,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "afb3q5hajueioa"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "pill"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "hideFrom": {
+              "viz": false
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "dataset": "F1GarageManager",
+          "datasource": {
+            "type": "mssql",
+            "uid": "afb3q5hajueioa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \r\n  c.nombre AS [Circuito],\r\n  r.posicion AS [Posición],\r\n  r.id_carro AS [Carro],\r\n  u.nombre_completo AS [Conductor],\r\n  e.nombre AS [Equipo],\r\n  r.tiempo_total AS [Tiempo (s)],\r\n  r.p_usado AS [P],\r\n  r.a_usado AS [A],\r\n  r.m_usado AS [M],\r\n  r.h_conductor AS [H],\r\n  r.velocidad_recta AS [V.Recta],\r\n  r.velocidad_curva AS [V.Curva],\r\n  r.penalizacion AS [Penalización]\r\nFROM RESULTADO r\r\nINNER JOIN SIMULACION s ON s.id_simulacion = r.id_simulacion\r\nINNER JOIN USUARIO u ON u.id_usuario = r.id_conductor\r\nINNER JOIN CARRO ca ON ca.id_carro = r.id_carro\r\nINNER JOIN EQUIPO e ON e.id_equipo = ca.id_equipo\r\nINNER JOIN CIRCUITO c ON c.id_circuito = s.id_circuito\r\nWHERE s.id_simulacion = $id_simulacion\r\nORDER BY r.posicion ASC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Resumen de Simulaciones",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "Simulación #29 - 01/28 02:32",
+          "value": "29"
+        },
+        "definition": "SELECT DISTINCT \n  id_simulacion as __value,\n  CONCAT('Simulación #', id_simulacion, ' - ', FORMAT(fecha_hora, 'MM/dd HH:mm')) as __text\nFROM SIMULACION\nORDER BY id_simulacion DESC",
+        "name": "id_simulacion",
+        "options": [],
+        "query": "SELECT DISTINCT \n  id_simulacion as __value,\n  CONCAT('Simulación #', id_simulacion, ' - ', FORMAT(fecha_hora, 'MM/dd HH:mm')) as __text\nFROM SIMULACION\nORDER BY id_simulacion DESC",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Proyecto 1",
+  "uid": "admq8jd",
+  "version": 3
+}

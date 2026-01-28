@@ -1209,6 +1209,48 @@ app.delete('/api/carros/:id', requireRole('Admin', 'Engineer'), async (req, res)
   }
 });
 
+// Carros finalizados disponibles para simulación
+app.get('/api/carros/finalizados', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const pool = await poolPromise;
+
+    const id_equipo =
+      req.session.rol === 'Engineer'
+        ? req.session.id_equipo
+        : (req.query.id_equipo ? Number(req.query.id_equipo) : null);
+
+    const result = await pool.request()
+      .input('id_equipo', sql.Int, id_equipo)
+      .execute('dbo.sp_ListarCarrosFinalizados');
+
+    res.json(result.recordset);
+  } catch (err) {
+    console.error('Error listando carros finalizados:', err);
+    res.status(500).json({ message: 'Error interno del servidor' });
+  }
+});
+
+// Reabrir carro finalizado (Admin, Engineer)
+app.put('/api/carros/:id/reabrir', requireRole('Admin', 'Engineer'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const pool = await poolPromise;
+
+    const result = await pool.request()
+      .input('id_carro', sql.Int, Number(id))
+      .execute('dbo.sp_ReabrirCarro');
+
+    res.json({ message: result.recordset?.[0]?.mensaje || 'Carro reabierto' });
+  } catch (err) {
+    console.error('Error reabriendo carro:', err);
+
+    const msg = err?.originalError?.info?.message || err.message || 'Error interno';
+    
+    res.status(400).json({ message: msg });
+  }
+});
+
+
 //======= SIMULACION ===============
 const simulacionRoutes = require('./simulacion');
 app.use('/api/simulacion', requireRole('Admin','Engineer'), simulacionRoutes);

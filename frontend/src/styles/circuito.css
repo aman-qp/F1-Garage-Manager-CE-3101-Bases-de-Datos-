@@ -75,12 +75,17 @@ input:focus {
 }
 
 .btn.primary {
-  background: linear-gradient(95deg, #2e9b13, #02851e);
+  background: linear-gradient(95deg, #2e9b13, #02851e)!important;
   border: none;
 }
 
 .btn.danger {
-  background: linear-gradient(95deg, #7f1d1d, #b91c1c);
+  background: linear-gradient(95deg, #7f1d1d, #b91c1c)!important;
+  border: none;
+}
+
+.btn.edit {
+  background: linear-gradient(95deg, #237696, #2e6085)!important;
   border: none;
 }
 

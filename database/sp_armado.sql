@@ -456,5 +456,55 @@ BEGIN
 END;
 GO
 
+-- =============================================
+-- SP 10: Listar carros finalizados (opcionalmente por equipo)      
+-- =============================================
+
+CREATE OR ALTER PROCEDURE dbo.sp_ListarCarrosFinalizados
+  @id_equipo INT = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT
+    c.id_carro,
+    c.id_equipo,
+    e.nombre AS equipo,
+    c.id_conductor,
+    u.nombre_completo AS conductor
+  FROM dbo.CARRO c
+  INNER JOIN dbo.EQUIPO e ON e.id_equipo = c.id_equipo
+  LEFT JOIN dbo.USUARIO u ON u.id_usuario = c.id_conductor
+  WHERE c.estado = 'Finalizado'
+    AND (@id_equipo IS NULL OR c.id_equipo = @id_equipo)
+  ORDER BY e.nombre, c.id_carro;
+END;
+GO
+
+-- =============================================
+-- SP 11: Reabrir un carro finalizado   
+-- =============================================
+
+CREATE OR ALTER PROCEDURE dbo.sp_ReabrirCarro
+  @id_carro INT
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SET XACT_ABORT ON;
+
+  IF NOT EXISTS (SELECT 1 FROM dbo.CARRO WHERE id_carro = @id_carro)
+    THROW 51001, 'El carro no existe', 1;
+
+  IF EXISTS (SELECT 1 FROM dbo.CARRO WHERE id_carro = @id_carro AND estado <> 'Finalizado')
+    THROW 51002, 'Solo se puede reabrir un carro que esté en estado Finalizado', 1;
+
+  UPDATE dbo.CARRO
+  SET estado = 'Armando'
+  WHERE id_carro = @id_carro;
+
+  SELECT 'Carro reabierto (Armando). Ya podés cambiar las partes.' AS mensaje;
+END;
+GO
+
 PRINT 'Stored Procedures de Armado creados exitosamente';
 GO

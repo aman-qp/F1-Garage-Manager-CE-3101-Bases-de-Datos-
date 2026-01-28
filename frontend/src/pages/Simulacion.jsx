@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import '../styles/simulacion.css'
 
 export default function Simulacion() {
   const [circuitos, setCircuitos] = useState([])
+  const [carrosDisponibles, setCarrosDisponibles] = useState([])
+
   const [resultados, setResultados] = useState([])
   const [idCircuito, setIdCircuito] = useState('')
   const [dcGlobal, setDcGlobal] = useState(0.5)
@@ -10,8 +12,12 @@ export default function Simulacion() {
   const [error, setError] = useState('')
   const [dcMaximo, setDcMaximo] = useState(null)
 
+  const [carrosSeleccionados, setCarrosSeleccionados] = useState([])
+  const [filtroCarros, setFiltroCarros] = useState('')
+
   useEffect(() => {
     cargarCircuitos()
+    cargarCarrosDisponibles()
   }, [])
 
   // Calcular dc_maximo cuando cambia el circuito
@@ -19,45 +25,98 @@ export default function Simulacion() {
     if (idCircuito) {
       const circuito = circuitos.find(c => c.id_circuito === Number(idCircuito))
       if (circuito) {
-        const maxDc = (circuito.distancia_total / circuito.cantidad_curvas).toFixed(2)
-        setDcMaximo(maxDc)
-        
-        // Si el dc_global actual es mayor al máximo, ajustarlo
-        if (Number(dcGlobal) > Number(maxDc)) {
-          setDcGlobal(maxDc)
+        if (Number(circuito.cantidad_curvas) > 0) {
+          const maxDc = (circuito.distancia_total / circuito.cantidad_curvas).toFixed(2)
+          setDcMaximo(maxDc)
+          if (Number(dcGlobal) > Number(maxDc)) setDcGlobal(maxDc)
+        } else {
+          setDcMaximo(null)
         }
       }
     } else {
       setDcMaximo(null)
     }
-  }, [idCircuito, circuitos])
+  }, [idCircuito, circuitos]) // intencional: sin dcGlobal para evitar loops
 
   async function cargarCircuitos() {
     try {
       const res = await fetch('http://localhost:3001/api/circuitos', {
         credentials: 'include'
       })
-      
-      if (!res.ok) {
-        console.error('Error cargando circuitos:', res.status)
-        return
-      }
-      
+      if (!res.ok) return
       const data = await res.json()
-      console.log('Circuitos cargados:', data)
       setCircuitos(data)
-    } catch (err) {
-      console.error('Error en cargarCircuitos:', err)
+    } catch {
       alert('Error cargando circuitos')
     }
   }
 
+  async function cargarCarrosDisponibles() {
+    try {
+      const res = await fetch('http://localhost:3001/api/carros/finalizados', {
+        credentials: 'include'
+      })
+
+      const data = await res.json().catch(() => ([]))
+
+      if (!res.ok) {
+        console.error('Error carros finalizados:', data)
+        return
+      }
+
+      setCarrosDisponibles(data)
+
+      // opcional: seleccionar todos por defecto
+      // setCarrosSeleccionados(data.map(c => c.id_carro))
+    } catch (err) {
+      console.error('Error cargando carros:', err)
+    }
+  }
+
+  const carrosFiltrados = useMemo(() => {
+    const f = filtroCarros.trim().toLowerCase()
+    if (!f) return carrosDisponibles
+
+    return carrosDisponibles.filter(c => {
+      const texto = `carro ${c.id_carro} ${c.equipo ?? ''} ${c.conductor ?? ''}`.toLowerCase()
+      return texto.includes(f)
+    })
+  }, [carrosDisponibles, filtroCarros])
+
+  const seleccionadosSet = useMemo(() => new Set(carrosSeleccionados), [carrosSeleccionados])
+
+  function toggleCarro(id) {
+    setCarrosSeleccionados(prev => {
+      const set = new Set(prev)
+      if (set.has(id)) set.delete(id)
+      else set.add(id)
+      return Array.from(set)
+    })
+  }
+
+  function seleccionarTodosFiltrados() {
+    setCarrosSeleccionados(prev => {
+      const set = new Set(prev)
+      carrosFiltrados.forEach(c => set.add(c.id_carro))
+      return Array.from(set)
+    })
+  }
+
+  function limpiarSeleccion() {
+    setCarrosSeleccionados([])
+  }
+
   async function simularCarrera() {
-    console.log('Iniciando simulación...')
     setError('')
+    setResultados([])
 
     if (!idCircuito) {
       setError('Seleccione un circuito')
+      return
+    }
+
+    if (!carrosSeleccionados || carrosSeleccionados.length === 0) {
+      setError('Seleccione al menos un carro para simular')
       return
     }
 
@@ -67,17 +126,14 @@ export default function Simulacion() {
     }
 
     setLoading(true)
-    setResultados([])
 
     try {
       const body = {
         id_circuito: Number(idCircuito),
-        dc_global: Number(dcGlobal)
+        dc_global: Number(dcGlobal),
+        carros: carrosSeleccionados.map(Number)
       }
-      
-      console.log('Enviando:', body)
 
-      // Delay para animación
       const delay = new Promise(resolve => setTimeout(resolve, 3000))
 
       const fetchData = fetch('http://localhost:3001/api/simulacion', {
@@ -88,28 +144,20 @@ export default function Simulacion() {
       })
 
       const [res] = await Promise.all([fetchData, delay])
-      
-      console.log('Respuesta status:', res.status)
-      
       const data = await res.json()
-      console.log('Respuesta data:', data)
 
       if (!res.ok) {
         setError(data.error || data.detalle || 'Error desconocido')
-        console.error('Error del servidor:', data)
         return
       }
 
       if (!data.resultados || data.resultados.length === 0) {
-        setError('No se generaron resultados. Verifica que haya carros finalizados.')
+        setError('No se generaron resultados con esos carros. Verifica que estén finalizados.')
         return
       }
 
-      console.log('Resultados:', data.resultados)
       setResultados(data.resultados)
-
     } catch (err) {
-      console.error('Error en simularCarrera:', err)
       setError('No se pudo conectar al servidor: ' + err.message)
     } finally {
       setLoading(false)
@@ -123,8 +171,8 @@ export default function Simulacion() {
       <div className="simulacion-form">
         <label>
           Circuito
-          <select 
-            value={idCircuito} 
+          <select
+            value={idCircuito}
             onChange={e => setIdCircuito(e.target.value)}
             disabled={loading}
           >
@@ -135,6 +183,76 @@ export default function Simulacion() {
               </option>
             ))}
           </select>
+        </label>
+
+        <label>
+          Carros a simular
+          <div className="carros-picker">
+            <div className="carros-picker-top">
+              <input
+                type="text"
+                placeholder="Buscar por #, equipo o conductor…"
+                value={filtroCarros}
+                onChange={e => setFiltroCarros(e.target.value)}
+                disabled={loading}
+                className="carros-search"
+              />
+
+              <div className="carros-actions">
+                <button
+                  type="button"
+                  className="btn-pill btn-select-all"
+                  onClick={seleccionarTodosFiltrados}
+                  disabled={loading || carrosFiltrados.length === 0}
+                >
+                  Seleccionar todos
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-pill btn-clear"
+                  onClick={limpiarSeleccion}
+                  disabled={loading || carrosSeleccionados.length === 0}
+                >
+                  Limpiar
+                </button>
+              </div>
+            </div>
+
+            <div className="carros-counter">
+              Seleccionados: <strong>{carrosSeleccionados.length}</strong>
+              {carrosFiltrados.length !== carrosDisponibles.length && (
+                <span style={{ opacity: 0.8 }}>
+                  {' '}• Mostrando {carrosFiltrados.length} de {carrosDisponibles.length}
+                </span>
+              )}
+            </div>
+
+            <div className="carros-list">
+              {carrosFiltrados.length === 0 ? (
+                <div className="empty-message" style={{ padding: '1rem' }}>
+                  No hay carros que coincidan con el filtro.
+                </div>
+              ) : (
+                carrosFiltrados.map(c => {
+                  const checked = seleccionadosSet.has(c.id_carro)
+                  const label = `Carro #${c.id_carro} - ${c.equipo}${c.conductor ? ` (${c.conductor})` : ''}`
+
+                  return (
+                    <label key={c.id_carro} className={`carro-item ${checked ? 'selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggleCarro(c.id_carro)}
+                        disabled={loading}
+                      />
+                      <span>{label}</span>
+                    </label>
+                  )
+                })
+              )}
+            </div>
+          </div>
         </label>
 
         <label>
@@ -155,9 +273,9 @@ export default function Simulacion() {
           />
         </label>
 
-        <button 
-          className="btn-primary" 
-          onClick={simularCarrera} 
+        <button
+          className="btn-primary"
+          onClick={simularCarrera}
           disabled={loading || !idCircuito}
         >
           {loading ? 'Simulando...' : 'Simular Carrera'}
@@ -182,7 +300,7 @@ export default function Simulacion() {
       {resultados.length > 0 && (
         <div className="tabla-container">
           <h3 style={{ color: '#facc15', marginBottom: '1rem' }}>
-            🏆 Resultados de la Carrera
+            Resultados de la Carrera
           </h3>
           <table className="simulacion-table">
             <thead>
@@ -203,12 +321,12 @@ export default function Simulacion() {
             <tbody>
               {resultados.map(r => (
                 <tr key={r.id_carro}>
-                  <td style={{ 
+                  <td style={{
                     fontWeight: 'bold',
                     fontSize: '1.2rem',
-                    color: r.posicion === 1 ? '#ffd700' : 
-                           r.posicion === 2 ? '#c0c0c0' : 
-                           r.posicion === 3 ? '#cd7f32' : '#facc15'
+                    color: r.posicion === 1 ? '#ffd700' :
+                      r.posicion === 2 ? '#c0c0c0' :
+                        r.posicion === 3 ? '#cd7f32' : '#facc15'
                   }}>
                     #{r.posicion}
                   </td>

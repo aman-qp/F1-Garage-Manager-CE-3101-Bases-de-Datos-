@@ -101,19 +101,19 @@
 }
 
 .btn-edit {
-  background: linear-gradient(95deg, #2563eb, #1e40af);
+  background: linear-gradient(95deg, #2563eb, #1e40af)!important;
   color: white;
   flex: 1;
 }
 
 .btn-delete {
-  background: linear-gradient(95deg, #dc2626, #b91c1c);
+  background: linear-gradient(95deg, #dc2626, #b91c1c)!important;
   color: white;
   flex: 1;
 }
 
 .btn-add {
-  background: linear-gradient(95deg, #059669, #047857);
+  background: linear-gradient(95deg, #059669, #047857)!important;
   color: white;
   padding: 0.75rem 1.5rem;
   font-size: 1rem;
@@ -121,7 +121,7 @@
 }
 
 .btn-secondary {
-  background: #555;
+  background: #555!important;
   color: white;
   padding: 0.75rem 1.5rem;
 }

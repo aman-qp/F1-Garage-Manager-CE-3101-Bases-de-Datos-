@@ -3,16 +3,35 @@ const router = express.Router();
 const { poolPromise, sql } = require('./db');
 
 router.post('/', async (req, res) => {
-  const { id_circuito, dc_global } = req.body;
+  const { id_circuito, dc_global, carros } = req.body;
 
-  console.log('Simulación solicitada:', { id_circuito, dc_global });
+  console.log('Simulación solicitada:', { id_circuito, dc_global, carros });
+
+  // ============================
+  // Validaciones básicas
+  // ============================
+  if (!id_circuito || !dc_global) {
+    return res.status(400).json({
+      error: 'id_circuito y dc_global son obligatorios'
+    });
+  }
+
+  if (!Array.isArray(carros) || carros.length === 0) {
+    return res.status(400).json({
+      error: 'Debe seleccionar al menos un carro para simular'
+    });
+  }
+
+
+  const carrosCsv = carros.join(',');
 
   try {
     const pool = await poolPromise;
 
     const result = await pool.request()
       .input('id_circuito', sql.Int, id_circuito)
-      .input('dc_global', sql.Decimal(10,2), dc_global)
+      .input('dc_global', sql.Decimal(10, 2), dc_global)
+      .input('carros_csv', sql.VarChar(sql.MAX), carrosCsv)  
       .execute('sp_SimularCarrera');
 
     console.log('Simulación exitosa');
@@ -26,16 +45,19 @@ router.post('/', async (req, res) => {
   } catch (err) {
     console.error('Error en simulación:', err);
 
-    // Errores específicos del SP (THROW con número)
+    // ============================
+    // Errores controlados del SP
+    // ============================
+
+    // dc_global demasiado grande
     if (err.number === 50010) {
-      // dc_global demasiado grande
       return res.status(400).json({
         error: err.message
       });
     }
 
+    // Otros errores de validación del SP
     if (err.number >= 50001 && err.number <= 50006) {
-      // Otros errores de validación del SP
       return res.status(400).json({
         error: err.message
       });
@@ -55,13 +77,13 @@ router.post('/', async (req, res) => {
       });
     }
 
-    // Error genérico del SP
+    // Error genérico del request SQL
     if (err.code === 'EREQUEST') {
       return res.status(400).json({
         error: err.message || 'Error al ejecutar la simulación'
       });
     }
-    
+
     // Error inesperado
     return res.status(500).json({
       error: 'Error interno del servidor',

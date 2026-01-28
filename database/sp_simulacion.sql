@@ -3,29 +3,25 @@ GO
 
 CREATE OR ALTER PROCEDURE dbo.sp_SimularCarrera
   @id_circuito INT,
-  @dc_global  DECIMAL(10,2)
+  @dc_global  DECIMAL(10,2),
+  @carros_csv NVARCHAR(MAX) = NULL 
 AS
 BEGIN
   SET NOCOUNT ON;
   SET XACT_ABORT ON;
 
-  -- Validación básica de DC
   IF @dc_global <= 0
     THROW 50001, 'dc_global debe ser mayor a 0', 1;
 
   BEGIN TRAN;
   BEGIN TRY
 
-    /* =========================================================
-       Validaciones previas
-       ========================================================= */
+    /* =======================
+       Validaciones base
+       ======================= */
     IF NOT EXISTS (SELECT 1 FROM dbo.CIRCUITO WHERE id_circuito = @id_circuito)
       THROW 50002, 'El circuito no existe', 1;
 
-    IF NOT EXISTS (SELECT 1 FROM dbo.CARRO WHERE estado = 'Finalizado')
-      THROW 50003, 'No hay carros finalizados para simular', 1;
-
-    -- Datos del circuito
     DECLARE @distancia_total DECIMAL(10,2);
     DECLARE @cantidad_curvas INT;
 
@@ -35,44 +31,75 @@ BEGIN
     FROM dbo.CIRCUITO
     WHERE id_circuito = @id_circuito;
 
-    -- Distancias
     DECLARE @Dcurvas  DECIMAL(10,2) = @cantidad_curvas * @dc_global;
     DECLARE @Drectas  DECIMAL(10,2) = @distancia_total - @Dcurvas;
 
-    -- Validación: Drectas >= 0
-    -- OJO: si cantidad_curvas = 0, no debe intentar dividir entre 0 en el mensaje.
-    IF @Drectas < 0
+    IF @cantidad_curvas > 0 AND @Drectas < 0
     BEGIN
-      DECLARE @max_dc DECIMAL(10,4) = @distancia_total / NULLIF(@cantidad_curvas, 0);
+      DECLARE @maxdc DECIMAL(10,2) = @distancia_total / NULLIF(@cantidad_curvas,0);
+
       DECLARE @ErrorMsg NVARCHAR(500) =
         'dc_global demasiado grande. Con dc_global=' + CAST(@dc_global AS VARCHAR(20)) +
         ', Dcurvas=' + CAST(@Dcurvas AS VARCHAR(20)) +
-        ' km excede la distancia total del circuito (' + CAST(@distancia_total AS VARCHAR(20)) +
-        ' km). Usa dc_global <= ' + COALESCE(CAST(@max_dc AS VARCHAR(20)), 'N/A (circuito sin curvas)');
+        ' km excede la distancia total (' + CAST(@distancia_total AS VARCHAR(20)) +
+        ' km). Usa dc_global <= ' + CAST(@maxdc AS VARCHAR(20));
+
       THROW 50010, @ErrorMsg, 1;
     END
 
-    -- Validar setup completo (5 categorías) en carros finalizados
-    DECLARE @carros_incompletos INT;
-    SELECT @carros_incompletos = COUNT(*)
-    FROM dbo.CARRO c
-    WHERE c.estado = 'Finalizado'
-      AND (SELECT COUNT(DISTINCT id_categoria) FROM dbo.INSTALA WHERE id_carro = c.id_carro) <> 5;
+    /* =======================
+       Selección de carros
+       ======================= */
+    DECLARE @Seleccion TABLE (id_carro INT PRIMARY KEY);
 
-    IF @carros_incompletos > 0
-      THROW 50004, 'Hay carros finalizados sin las 5 categorías instaladas', 1;
+    IF @carros_csv IS NULL OR LTRIM(RTRIM(@carros_csv)) = ''
+    BEGIN
+      INSERT INTO @Seleccion(id_carro)
+      SELECT id_carro
+      FROM dbo.CARRO
+      WHERE estado = 'Finalizado';
+    END
+    ELSE
+    BEGIN
+      INSERT INTO @Seleccion(id_carro)
+      SELECT DISTINCT TRY_CAST(value AS INT)
+      FROM STRING_SPLIT(@carros_csv, ',')
+      WHERE TRY_CAST(value AS INT) IS NOT NULL;
+    END
 
-    -- Validar que los carros tengan conductor
+    IF NOT EXISTS (SELECT 1 FROM @Seleccion)
+      THROW 50011, 'Debe seleccionar al menos 1 carro para simular', 1;
+
+    -- Todos deben existir y estar Finalizado
     IF EXISTS (
       SELECT 1
-      FROM dbo.CARRO
-      WHERE estado = 'Finalizado' AND id_conductor IS NULL
+      FROM @Seleccion s
+      LEFT JOIN dbo.CARRO c ON c.id_carro = s.id_carro
+      WHERE c.id_carro IS NULL OR c.estado <> 'Finalizado'
     )
-      THROW 50005, 'Hay carros finalizados sin conductor asignado', 1;
+      THROW 50012, 'Hay carros inválidos o que no están en estado Finalizado', 1;
 
-    /* =========================================================
+    -- Validar setup completo solo de los seleccionados
+    IF EXISTS (
+      SELECT 1
+      FROM @Seleccion s
+      JOIN dbo.CARRO c ON c.id_carro = s.id_carro
+      WHERE (SELECT COUNT(DISTINCT id_categoria) FROM dbo.INSTALA WHERE id_carro = c.id_carro) <> 5
+    )
+      THROW 50004, 'Hay carros seleccionados sin las 5 categorías instaladas', 1;
+
+    -- Validar conductor en los seleccionados
+    IF EXISTS (
+      SELECT 1
+      FROM @Seleccion s
+      JOIN dbo.CARRO c ON c.id_carro = s.id_carro
+      WHERE c.id_conductor IS NULL
+    )
+      THROW 50005, 'Hay carros seleccionados sin conductor asignado', 1;
+
+    /* =======================
        Crear simulación
-       ========================================================= */
+       ======================= */
     DECLARE @id_simulacion INT;
 
     INSERT INTO dbo.SIMULACION(id_circuito, fecha_hora, dc_global)
@@ -80,9 +107,9 @@ BEGIN
 
     SET @id_simulacion = SCOPE_IDENTITY();
 
-    /* =========================================================
-       Calcular y guardar resultados
-       ========================================================= */
+    /* =======================
+       Calcular + guardar resultados
+       ======================= */
     INSERT INTO dbo.RESULTADO(
       id_simulacion, id_carro, id_conductor, posicion,
       p_usado, a_usado, m_usado, h_conductor,
@@ -105,25 +132,16 @@ BEGIN
       SELECT
         c.id_carro,
         c.id_conductor,
-        SUM(p.potencia)     AS P,
+        SUM(p.potencia) AS P,
         SUM(p.aerodinamica) AS A,
-        SUM(p.manejo)       AS M,
-        co.habilidad_h      AS H,
+        SUM(p.manejo) AS M,
+        co.habilidad_h AS H,
 
-        -- Distancias (según enunciado)
-        @distancia_total    AS D,
-        @cantidad_curvas    AS C,
-        @Dcurvas            AS Dcurvas,
-        @Drectas            AS Drectas,
-
-        -- Velocidades (km/h) (según enunciado)
         (200.0 + 3.0*SUM(p.potencia) + 0.2*co.habilidad_h - 1.0*SUM(p.aerodinamica)) AS Vrecta,
-        ( 90.0 + 2.0*SUM(p.aerodinamica) + 2.0*SUM(p.manejo)       + 0.2*co.habilidad_h) AS Vcurva,
+        ( 90.0 + 2.0*SUM(p.aerodinamica) + 2.0*SUM(p.manejo) + 0.2*co.habilidad_h) AS Vcurva,
 
-        -- Penalización (segundos) (según enunciado)
         (@cantidad_curvas * 40.0) / (1.0 + (co.habilidad_h/100.0)) AS Penalizacion,
 
-        -- Tiempo total (segundos)
         (
           (@Drectas / NULLIF((200.0 + 3.0*SUM(p.potencia) + 0.2*co.habilidad_h - 1.0*SUM(p.aerodinamica)), 0))
           +
@@ -134,24 +152,19 @@ BEGIN
         AS Tiemposegundos
 
       FROM dbo.CARRO c
+      INNER JOIN @Seleccion s ON s.id_carro = c.id_carro
       INNER JOIN dbo.CONDUCTOR co ON co.id_usuario = c.id_conductor
-      INNER JOIN dbo.INSTALA i    ON i.id_carro = c.id_carro
-      INNER JOIN dbo.PARTE p      ON p.id_parte = i.id_parte
-      WHERE c.estado = 'Finalizado'
+      INNER JOIN dbo.INSTALA i ON i.id_carro = c.id_carro
+      INNER JOIN dbo.PARTE p ON p.id_parte = i.id_parte
       GROUP BY c.id_carro, c.id_conductor, co.habilidad_h
     ) AS resultados;
 
-    DECLARE @insertados_resultados INT = @@ROWCOUNT;
-
-    IF @insertados_resultados = 0
-    BEGIN
-      ROLLBACK;
+    IF @@ROWCOUNT = 0
       THROW 50006, 'No se pudieron calcular resultados', 1;
-    END
 
-    /* =========================================================
-       Guardar setup snapshot (solo carros que participaron)
-       ========================================================= */
+    /* =======================
+       Guardar setup snapshot (solo de carros en la simulación)
+       ======================= */
     INSERT INTO dbo.SIMULACION_SETUP(
       id_simulacion, id_carro, id_categoria, id_parte,
       potencia, aerodinamica, manejo
@@ -166,18 +179,14 @@ BEGIN
       p.manejo
     FROM dbo.INSTALA i
     INNER JOIN dbo.PARTE p ON p.id_parte = i.id_parte
-    WHERE EXISTS (
-      SELECT 1
-      FROM dbo.RESULTADO r
-      WHERE r.id_simulacion = @id_simulacion
-        AND r.id_carro = i.id_carro
-    );
+    INNER JOIN dbo.RESULTADO r
+      ON r.id_simulacion = @id_simulacion AND r.id_carro = i.id_carro;
 
     COMMIT;
 
-    /* =========================================================
+    /* =======================
        Retornar resultados
-       ========================================================= */
+       ======================= */
     SELECT
       r.id_simulacion,
       r.id_carro,
@@ -199,17 +208,8 @@ BEGIN
 
   END TRY
   BEGIN CATCH
-    IF @@TRANCOUNT > 0
-      ROLLBACK;
-
-    DECLARE @ErrorMessage NVARCHAR(4000) = ERROR_MESSAGE();
-    DECLARE @ErrorSeverity INT = ERROR_SEVERITY();
-    DECLARE @ErrorState INT = ERROR_STATE();
-
-    RAISERROR(@ErrorMessage, @ErrorSeverity, @ErrorState);
+    IF @@TRANCOUNT > 0 ROLLBACK;
+    THROW;
   END CATCH
 END;
-GO
-
-PRINT 'SP de simulación completo';
 GO

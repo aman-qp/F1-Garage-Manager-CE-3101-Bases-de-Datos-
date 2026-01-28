@@ -38,19 +38,25 @@
 }
 
 .btn-edit {
-    background: linear-gradient(95deg, #203ee7, #081a0e);
+    background: linear-gradient(95deg, #203ee7, #081a0e)!important;
   color: white;
 }
 
 .btn-delete {
   background: #c40303;
-  background: linear-gradient(95deg,#c40303,#081a0e);
+  background: linear-gradient(95deg,#c40303,#081a0e)!important;
+  color: white;
+}
+
+.btn-cancel {
+  background: #b52222;
+  background: linear-gradient(95deg,#bf3333,#cb3a3a)!important;
   color: white;
 }
 
 .btn-add {
   margin-top: 1.5rem;
-  background: linear-gradient(95deg, #076429, #081a0e);
+  background: linear-gradient(95deg, #076429, #081a0e)!important;
   color: white;
   padding: 0.75rem;
   font-size: 1rem;

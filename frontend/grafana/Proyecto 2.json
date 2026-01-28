@@ -1,0 +1,140 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 4,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "afb3q5hajueioa"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "pill"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "hideFrom": {
+              "viz": false
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "dataset": "F1GarageManager",
+          "datasource": {
+            "type": "mssql",
+            "uid": "afb3q5hajueioa"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT \r\n  s.id_simulacion AS [Simulación],\r\n  FORMAT(s.fecha_hora, 'yyyy-MM-dd HH:mm') AS [Fecha],\r\n  c.nombre AS [Circuito],\r\n  r.posicion AS [Posición Final],\r\n  r.tiempo_total AS [Tiempo (s)],\r\n  \r\n  -- Setup completo: nombre de cada parte\r\n  MAX(CASE WHEN ss.id_categoria = 1 THEN p.nombre END) AS [Motor],\r\n  MAX(CASE WHEN ss.id_categoria = 2 THEN p.nombre END) AS [Aerodinámico],\r\n  MAX(CASE WHEN ss.id_categoria = 3 THEN p.nombre END) AS [Neumáticos],\r\n  MAX(CASE WHEN ss.id_categoria = 4 THEN p.nombre END) AS [Suspensión],\r\n  MAX(CASE WHEN ss.id_categoria = 5 THEN p.nombre END) AS [Caja Cambios],\r\n  \r\n  -- Totales\r\n  r.p_usado AS [P Total],\r\n  r.a_usado AS [A Total],\r\n  r.m_usado AS [M Total],\r\n  r.h_conductor AS [H],\r\n  \r\n  -- Rendimiento\r\n  r.velocidad_recta AS [V.Recta],\r\n  r.velocidad_curva AS [V.Curva]\r\n  \r\nFROM RESULTADO r\r\nINNER JOIN SIMULACION s ON s.id_simulacion = r.id_simulacion\r\nINNER JOIN CIRCUITO c ON c.id_circuito = s.id_circuito\r\nLEFT JOIN SIMULACION_SETUP ss ON ss.id_simulacion = s.id_simulacion \r\n                               AND ss.id_carro = r.id_carro\r\nLEFT JOIN PARTE p ON p.id_parte = ss.id_parte\r\nWHERE r.id_carro = $id_carro\r\nGROUP BY \r\n  s.id_simulacion, s.fecha_hora, c.nombre, r.posicion, r.tiempo_total,\r\n  r.p_usado, r.a_usado, r.m_usado, r.h_conductor,\r\n  r.velocidad_recta, r.velocidad_curva\r\nORDER BY s.fecha_hora DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Historial del Carro #$id_carro - Setup vs Rendimiento",
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 42,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": "Carro #3 - Red Bull Racing",
+          "value": "3"
+        },
+        "definition": "SELECT DISTINCT \n  c.id_carro as __value,\n  CONCAT('Carro #', c.id_carro, ' - ', e.nombre) as __text\nFROM CARRO c\nINNER JOIN EQUIPO e ON e.id_equipo = c.id_equipo\nWHERE c.estado = 'Finalizado'\nORDER BY c.id_carro",
+        "name": "id_carro",
+        "options": [],
+        "query": "SELECT DISTINCT \n  c.id_carro as __value,\n  CONCAT('Carro #', c.id_carro, ' - ', e.nombre) as __text\nFROM CARRO c\nINNER JOIN EQUIPO e ON e.id_equipo = c.id_equipo\nWHERE c.estado = 'Finalizado'\nORDER BY c.id_carro",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Proyecto 2",
+  "uid": "adb9czh",
+  "version": 2
+}
