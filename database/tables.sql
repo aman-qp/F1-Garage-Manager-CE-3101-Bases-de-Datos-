@@ -233,7 +233,7 @@ GO
 CREATE TABLE dbo.CIRCUITO (
     id_circuito     INT IDENTITY(1,1) PRIMARY KEY,
     nombre          VARCHAR(120) NOT NULL,
-    distancia_total DECIMAL(10,2) NOT NULL,
+    distancia_total DECIMAL(10,3) NOT NULL,
     cantidad_curvas INT NOT NULL,
 
     CONSTRAINT UQ_CIRCUITO_nombre UNIQUE (nombre),
@@ -241,6 +241,9 @@ CREATE TABLE dbo.CIRCUITO (
     CONSTRAINT CK_CIRCUITO_curvas CHECK (cantidad_curvas >= 0)
 );
 GO
+
+ALTER TABLE dbo.CIRCUITO
+ALTER COLUMN distancia_total DECIMAL(10,3) NOT NULL;
 
 CREATE TABLE dbo.SIMULACION (
     id_simulacion INT IDENTITY(1,1) PRIMARY KEY,

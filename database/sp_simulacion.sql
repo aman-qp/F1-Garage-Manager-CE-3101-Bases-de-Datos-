@@ -22,7 +22,7 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM dbo.CIRCUITO WHERE id_circuito = @id_circuito)
       THROW 50002, 'El circuito no existe', 1;
 
-    DECLARE @distancia_total DECIMAL(10,2);
+    DECLARE @distancia_total DECIMAL(10,3);
     DECLARE @cantidad_curvas INT;
 
     SELECT
@@ -31,12 +31,12 @@ BEGIN
     FROM dbo.CIRCUITO
     WHERE id_circuito = @id_circuito;
 
-    DECLARE @Dcurvas  DECIMAL(10,2) = @cantidad_curvas * @dc_global;
-    DECLARE @Drectas  DECIMAL(10,2) = @distancia_total - @Dcurvas;
+    DECLARE @Dcurvas  DECIMAL(10,3) = @cantidad_curvas * @dc_global;
+    DECLARE @Drectas  DECIMAL(10,3) = @distancia_total - @Dcurvas;
 
     IF @cantidad_curvas > 0 AND @Drectas < 0
     BEGIN
-      DECLARE @maxdc DECIMAL(10,2) = @distancia_total / NULLIF(@cantidad_curvas,0);
+      DECLARE @maxdc DECIMAL(10,3) = @distancia_total / NULLIF(@cantidad_curvas,0);
 
       DECLARE @ErrorMsg NVARCHAR(500) =
         'dc_global demasiado grande. Con dc_global=' + CAST(@dc_global AS VARCHAR(20)) +

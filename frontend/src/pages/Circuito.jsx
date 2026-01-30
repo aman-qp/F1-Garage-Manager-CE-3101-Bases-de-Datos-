@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+import { API_URL } from '../config'
 import "../styles/circuito.css"
 
 export default function CircuitosAdmin() {
@@ -32,7 +33,7 @@ export default function CircuitosAdmin() {
     setLoading(true)
 
     try {
-      const res = await fetch("http://localhost:3001/api/circuitos", {
+      const res = await fetch(`${API_URL}/api/circuitos`, {
         credentials: "include",
       })
       const data = await res.json()
@@ -68,7 +69,7 @@ export default function CircuitosAdmin() {
     if (Number.isNaN(payload.cantidad_curvas) || payload.cantidad_curvas < 0) return setErrorForm("La cantidad de curvas debe ser mayor o igual a 0")
 
     try {
-      const res = await fetch("http://localhost:3001/api/circuitos", {
+      const res = await fetch(`${API_URL}/api/circuitos`, {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -81,7 +82,7 @@ export default function CircuitosAdmin() {
         return
       }
 
-      setMsg("Circuito creado ✅")
+      setMsg("Circuito creado")
       setNombre("")
       setDistancia("")
       setCurvas("")
@@ -124,7 +125,7 @@ export default function CircuitosAdmin() {
     if (Number.isNaN(payload.cantidad_curvas) || payload.cantidad_curvas < 0) return setErrorForm("Curvas debe ser >= 0")
 
     try {
-      const res = await fetch(`http://localhost:3001/api/circuitos/${id}`, {
+      const res = await fetch(`${API_URL}/api/circuitos/${id}`, {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
@@ -137,7 +138,7 @@ export default function CircuitosAdmin() {
         return
       }
 
-      setMsg("Circuito actualizado ✅")
+      setMsg("Circuito actualizado")
       cancelarEdicion()
       await cargar()
     } catch {
@@ -155,7 +156,7 @@ export default function CircuitosAdmin() {
     if (!ok) return
 
     try {
-      const res = await fetch(`http://localhost:3001/api/circuitos/${id}`, {
+      const res = await fetch(`${API_URL}/api/circuitos/${id}`, {
         method: "DELETE",
         credentials: "include",
       })
@@ -166,7 +167,7 @@ export default function CircuitosAdmin() {
         return
       }
 
-      setMsg("Circuito eliminado ✅")
+      setMsg("Circuito eliminado")
       await cargar()
     } catch {
       setErrorTabla("No se pudo conectar al servidor")
@@ -192,11 +193,11 @@ export default function CircuitosAdmin() {
               Distancia total (km)
               <input
                 type="number"
-                step="0.01"
-                min="0.01"
+                step="0.001"
+                min="0.001"
                 value={distancia}
                 onChange={(e) => setDistancia(e.target.value)}
-                placeholder="Ej: 305.50"
+                placeholder="Ej: 305.500"
               />
             </label>
 
@@ -258,13 +259,13 @@ export default function CircuitosAdmin() {
                       {editando ? (
                         <input
                           type="number"
-                          step="0.01"
-                          min="0.01"
+                          step="0.001"
+                          min="0.001"
                           value={editDistancia}
                           onChange={(e) => setEditDistancia(e.target.value)}
                         />
                       ) : (
-                        Number(c.distancia_total).toFixed(2)
+                        Number(c.distancia_total).toFixed(3)
                       )}
                     </td>
 

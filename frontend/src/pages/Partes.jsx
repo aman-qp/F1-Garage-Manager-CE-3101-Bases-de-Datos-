@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import '../styles/partes.css';
 
 export default function Partes() {
@@ -24,7 +25,7 @@ export default function Partes() {
 
   async function cargarPartes() {
     try {
-      const res = await fetch('http://localhost:3001/api/partes', {
+      const res = await fetch(`${API_URL}/api/partes`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -38,7 +39,7 @@ export default function Partes() {
 
   async function cargarCategorias() {
     try {
-      const res = await fetch('http://localhost:3001/api/categorias', {
+      const res = await fetch(`${API_URL}/api/categorias`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -105,8 +106,8 @@ export default function Partes() {
 
     try {
       const url = modoEdicion 
-        ? `http://localhost:3001/api/partes/${parteActual.id_parte}`
-        : 'http://localhost:3001/api/partes';
+        ? `${API_URL}/api/partes/${parteActual.id_parte}`
+        : `${API_URL}/api/partes`;
       
       const method = modoEdicion ? 'PUT' : 'POST';
 
@@ -143,7 +144,7 @@ export default function Partes() {
     if (!confirm('¿Estás seguro de eliminar esta parte?')) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/partes/${id}`, {
+      const res = await fetch(`${API_URL}/api/partes/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       });

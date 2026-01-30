@@ -14,10 +14,35 @@ const PORT = process.env.PORT || 3001;
 // MIDDLEWARE
 // =============================================
 
-app.use(cors({
-  origin: 'http://localhost:5173', // URL de React (Vite)
+// Configuración de CORS para permitir acceso desde la red local
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir requests sin origin (como Postman, apps móviles)
+    if (!origin) return callback(null, true);
+    
+    // Permitir localhost y cualquier IP en la red local en el puerto 5173
+    const allowedPatterns = [
+      /^http:\/\/localhost:5173$/,
+      /^http:\/\/127\.0\.0\.1:5173$/,
+      /^http:\/\/192\.168\.\d{1,3}\.\d{1,3}:5173$/,  // Red local 192.168.x.x
+      /^http:\/\/192\.20\.\d{1,3}\.\d{1,3}:5173$/,   // Red local 192.20.x.x
+      /^http:\/\/172\.20\.\d{1,3}\.\d{1,3}:5173$/,   // Red local 192.20.x.x
+      /^http:\/\/10\.\d{1,3}\.\d{1,3}\.\d{1,3}:5173$/,  // Red local 10.x.x.x
+      /^http:\/\/172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3}:5173$/  // Red local 172.16-31.x.x
+    ];
+    
+    const isAllowed = allowedPatterns.some(pattern => pattern.test(origin));
+    
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 //console.log('DB_SERVER:', process.env.DB_SERVER);
@@ -46,8 +71,9 @@ app.use(session({
   cookie: {
     httpOnly: true,
     sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 1000 * 60 * 60
+    secure: false,
+    maxAge: 1000 * 60 * 60,
+    domain: undefined  // Sin restricción de dominio para que funcione con IPs
   }
 }));
 
@@ -661,10 +687,18 @@ app.get('/api/categorias', async (req, res) => {
   }
 });
 
-
 // =============================================
 // RUTAS DE COMPRAS E INVENTARIO
 // =============================================
+
+function getSqlMessage(err) {
+  return (
+    err?.originalError?.info?.message ||
+    err?.precedingErrors?.[0]?.message ||
+    err?.message ||
+    ''
+  );
+}
 
 // GET /api/inventario/:id_equipo - Obtener inventario de un equipo
 app.get('/api/inventario/:id_equipo', requireRole('Admin', 'Engineer'), async (req, res) => {
@@ -682,9 +716,10 @@ app.get('/api/inventario/:id_equipo', requireRole('Admin', 'Engineer'), async (r
 
     res.json(result.recordset);
   } catch (err) {
+    const sqlMsg = getSqlMessage(err);
     console.error('Error al obtener inventario:', err);
 
-    if (err.message && err.message.includes('El equipo no existe')) {
+    if (sqlMsg && sqlMsg.includes('El equipo no existe')) {
       return res.status(404).json({ message: 'El equipo no existe' });
     }
 
@@ -699,8 +734,8 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
 
   // Validaciones básicas
   if (!id_equipo || !id_parte || !cantidad) {
-    return res.status(400).json({ 
-      message: 'Faltan datos: id_equipo, id_parte y cantidad son obligatorios' 
+    return res.status(400).json({
+      message: 'Faltan datos: id_equipo, id_parte y cantidad son obligatorios'
     });
   }
 
@@ -748,15 +783,15 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
     await transaction.commit();
 
     // Obtener detalles de la compra confirmada
-    const resumen = confirmarResult.recordset[0];
+    const resumen = confirmarResult.recordset?.[0];
 
     res.json({
       success: true,
       message: 'Compra realizada exitosamente',
       compra: {
-        id_compra: resumen.id_compra,
-        id_equipo: resumen.id_equipo,
-        precio_total: resumen.precio_total
+        id_compra: resumen?.id_compra,
+        id_equipo: resumen?.id_equipo,
+        precio_total: resumen?.precio_total
       }
     });
 
@@ -769,47 +804,55 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
       }
     }
 
+    const sqlMsg = getSqlMessage(err);
+    const msgLower = (sqlMsg || '').toLowerCase();
+
     console.error('Error en compra:', err);
 
     // Manejar errores específicos de los stored procedures
-    if (err.message && err.message.includes('Presupuesto insuficiente')) {
-      return res.status(400).json({ 
-        message: 'Presupuesto insuficiente para completar la compra' 
-      });
-    }
-    
-    if (err.message && err.message.includes('Stock insuficiente')) {
-      return res.status(400).json({ 
-        message: 'Stock insuficiente en el catálogo' 
+    if (msgLower.includes('presupuesto insuficiente')) {
+      return res.status(400).json({
+        code: 'PRESUPUESTO_INSUFICIENTE',
+        message: 'Presupuesto insuficiente para completar la compra.'
       });
     }
 
-    if (err.message && err.message.includes('El equipo no existe')) {
+    if (msgLower.includes('stock insuficiente') || msgLower.includes('sin stock')) {
+      return res.status(409).json({
+        code: 'SIN_STOCK',
+        message: 'No hay stock suficiente para completar la compra.'
+      });
+    }
+
+    if (msgLower.includes('el equipo no existe')) {
       return res.status(404).json({ message: 'El equipo no existe' });
     }
 
-    if (err.message && err.message.includes('La parte no existe')) {
+    if (msgLower.includes('la parte no existe')) {
       return res.status(404).json({ message: 'La parte no existe' });
     }
 
-    res.status(500).json({ 
+    // Genérico
+    res.status(500).json({
       message: 'Error al procesar la compra',
-      error: err.message 
+      error: sqlMsg 
     });
   }
 });
+
+
 // Ejecutar seed automático en primer inicio
 (async () => {
   try {
     const pool = await poolPromise;
     const result = await pool.request()
       .query("SELECT COUNT(*) as count FROM dbo.USUARIO WHERE rol = 'Admin'");
-    
+
     if (result.recordset[0].count === 0) {
       console.log('No hay usuarios Admin. Ejecutando seed inicial...\n');
       const bcrypt = require('bcrypt');
       const hashedPassword = await bcrypt.hash('admin123', 10);
-      
+
       await pool.request()
         .input('id_equipo', sql.Int, null)
         .input('nombre_usuario', sql.VarChar(80), 'admin')
@@ -817,7 +860,7 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
         .input('rol', sql.VarChar(20), 'Admin')
         .input('contrasena_hash', sql.VarChar(255), hashedPassword)
         .execute('sp_CrearUsuario');
-      
+
       console.log('   Usuario admin creado automáticamente');
       console.log('   Usuario: admin');
       console.log('   Contraseña: admin123\n');
@@ -826,6 +869,7 @@ app.post('/api/compras', requireRole('Admin', 'Engineer'), async (req, res) => {
     console.error('Error en seed automático:', err);
   }
 })();
+
 
 // =============================================
 // RUTAS DE CONDUCTORES
@@ -1282,7 +1326,7 @@ app.post('/api/circuitos', requireRole('Admin'), async (req, res) => {
     const pool = await poolPromise
     const result = await pool.request()
       .input('nombre', sql.VarChar(120), nombre)
-      .input('distancia_total', sql.Decimal(10,2), distancia_total)
+      .input('distancia_total', sql.Decimal(10,3), distancia_total)
       .input('cantidad_curvas', sql.Int, cantidad_curvas)
       .execute('dbo.sp_Circuitos_Crear')
 
@@ -1312,7 +1356,7 @@ app.put('/api/circuitos/:id', requireRole('Admin'), async (req, res) => {
     await pool.request()
       .input('id_circuito', sql.Int, Number(id))
       .input('nombre', sql.VarChar(120), nombre)
-      .input('distancia_total', sql.Decimal(10,2), distancia_total)
+      .input('distancia_total', sql.Decimal(10,3), distancia_total)
       .input('cantidad_curvas', sql.Int, cantidad_curvas)
       .execute('dbo.sp_Circuitos_Actualizar')
 

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import '../styles/driver.css';
 
 export default function PerfilDriver() {
@@ -11,7 +12,7 @@ export default function PerfilDriver() {
 
   async function cargarPerfil() {
     try {
-      const res = await fetch('http://localhost:3001/api/conductor/me', {
+      const res = await fetch(`${API_URL}/api/conductor/me`, {
         credentials: 'include'
       });
 

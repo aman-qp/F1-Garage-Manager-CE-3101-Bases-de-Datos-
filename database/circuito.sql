@@ -24,7 +24,7 @@ GO
 -- ============================
 CREATE OR ALTER PROCEDURE dbo.sp_Circuitos_Crear
   @nombre VARCHAR(120),
-  @distancia_total DECIMAL(10,2),
+  @distancia_total DECIMAL(10,3),
   @cantidad_curvas INT
 AS
 BEGIN
@@ -52,7 +52,7 @@ GO
 CREATE OR ALTER PROCEDURE dbo.sp_Circuitos_Actualizar
   @id_circuito INT,
   @nombre VARCHAR(120),
-  @distancia_total DECIMAL(10,2),
+  @distancia_total DECIMAL(10,3),
   @cantidad_curvas INT
 AS
 BEGIN

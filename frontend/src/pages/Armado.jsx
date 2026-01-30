@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import '../styles/armado.css';
 import { useAuth } from '../context/AuthContext';
 
@@ -49,7 +50,7 @@ export default function Armado() {
 
   async function cargarEquipos() {
     try {
-      const res = await fetch('http://localhost:3001/api/equipos', {
+      const res = await fetch(`${API_URL}/api/equipos`, {
         credentials: 'include'
       });
 
@@ -82,7 +83,7 @@ export default function Armado() {
   async function cargarCarros() {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carros/equipo/${equipoSeleccionado}`,
+        `${API_URL}/api/carros/equipo/${equipoSeleccionado}`,
         { credentials: 'include' }
       );
 
@@ -107,7 +108,7 @@ export default function Armado() {
   async function cargarSetup() {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carros/${carroSeleccionado}/setup`,
+        `${API_URL}/api/carros/${carroSeleccionado}/setup`,
         { credentials: 'include' }
       );
       if (res.ok) {
@@ -122,7 +123,7 @@ export default function Armado() {
   async function cargarConductores() {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/equipos/${equipoSeleccionado}/conductores`,
+        `${API_URL}/api/equipos/${equipoSeleccionado}/conductores`,
         { credentials: 'include' }
       );
       if (res.ok) {
@@ -136,7 +137,7 @@ export default function Armado() {
 
   async function crearCarro() {
     try {
-      const res = await fetch('http://localhost:3001/api/carros', {
+      const res = await fetch(`${API_URL}/api/carros`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -166,7 +167,7 @@ export default function Armado() {
 
     try {
       const res = await fetch(
-        `http://localhost:3001/api/inventario/${equipoSeleccionado}/categoria/${categoria.id}`,
+        `${API_URL}/api/inventario/${equipoSeleccionado}/categoria/${categoria.id}`,
         { credentials: 'include' }
       );
 
@@ -186,7 +187,7 @@ export default function Armado() {
   async function instalarParte(id_parte) {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carros/${carroSeleccionado}/instalar`,
+        `${API_URL}/api/carros/${carroSeleccionado}/instalar`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -215,7 +216,7 @@ export default function Armado() {
   async function asignarConductor(id_conductor) {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carros/${carroSeleccionado}/conductor`,
+        `${API_URL}/api/carros/${carroSeleccionado}/conductor`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -246,7 +247,7 @@ export default function Armado() {
 
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carros/${carroSeleccionado}/finalizar`,
+        `${API_URL}/api/carros/${carroSeleccionado}/finalizar`,
         { method: 'POST', credentials: 'include' }
       );
 
@@ -276,9 +277,9 @@ export default function Armado() {
 
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carros/${carroSeleccionado}/reabrir`,
+        `${API_URL}/api/carros/${carroSeleccionado}/reabrir`,
         {
-          method: 'PUT',              // ✅ backend usa PUT
+          method: 'PUT',             
           credentials: 'include'
         }
       );
@@ -315,7 +316,7 @@ export default function Armado() {
 
     try {
       const res = await fetch(
-        `http://localhost:3001/api/carros/${carroSeleccionado}`,
+        `${API_URL}/api/carros/${carroSeleccionado}`,
         { method: 'DELETE', credentials: 'include' }
       );
 
@@ -331,7 +332,7 @@ export default function Armado() {
       setSetup(null);
 
       const resCarros = await fetch(
-        `http://localhost:3001/api/carros/equipo/${equipoSeleccionado}`,
+        `${API_URL}/api/carros/equipo/${equipoSeleccionado}`,
         { credentials: 'include' }
       );
 

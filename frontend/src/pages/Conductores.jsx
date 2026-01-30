@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import '../styles/conductores.css';
 import { useAuth } from '../context/AuthContext';
 
@@ -34,7 +35,7 @@ export default function Conductores() {
 
   async function cargarConductores() {
     try {
-      const res = await fetch('http://localhost:3001/api/conductores', {
+      const res = await fetch(`${API_URL}/api/conductores`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -48,7 +49,7 @@ export default function Conductores() {
 
   async function cargarEquipos() {
     try {
-      const res = await fetch('http://localhost:3001/api/equipos', {
+      const res = await fetch(`${API_URL}/api/equipos`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -62,7 +63,7 @@ export default function Conductores() {
 
   async function cargarDriversDisponibles() {
     try {
-      const res = await fetch('http://localhost:3001/api/conductores/disponibles', {
+      const res = await fetch(`${API_URL}/api/conductores/disponibles`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -88,7 +89,7 @@ export default function Conductores() {
     }
 
     try {
-      const res = await fetch('http://localhost:3001/api/conductores', {
+      const res = await fetch(`${API_URL}/api/conductores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -128,7 +129,7 @@ export default function Conductores() {
 
     try {
       const res = await fetch(
-        `http://localhost:3001/api/conductores/${formEditar.id_conductor}`,
+        `${API_URL}/api/conductores/${formEditar.id_conductor}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -160,7 +161,7 @@ export default function Conductores() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/api/conductores/${id}`, {
+      const res = await fetch(`${API_URL}/api/conductores/${id}`, {
         method: 'DELETE',
         credentials: 'include'
       });

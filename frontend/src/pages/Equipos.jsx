@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { API_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import '../styles/equipo.css';
 
@@ -26,7 +27,7 @@ export default function Equipos() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('http://localhost:3001/api/equipos', {
+      const res = await fetch(`${API_URL}/api/equipos`, {
         credentials: 'include'
       });
 
@@ -74,8 +75,8 @@ export default function Equipos() {
 
     try {
       const url = modoEdicion
-        ? `http://localhost:3001/api/equipos/${form.id_equipo}`
-        : 'http://localhost:3001/api/equipos';
+        ? `${API_URL}/api/equipos/${form.id_equipo}`
+        : `${API_URL}/api/equipos`;
 
       const method = modoEdicion ? 'PUT' : 'POST';
 
@@ -105,7 +106,7 @@ export default function Equipos() {
     if (!confirm(`¿Seguro que deseas eliminar el equipo "${nombre}"?`)) return;
 
     try {
-      const res = await fetch(`http://localhost:3001/api/equipos/${id_equipo}`, {
+      const res = await fetch(`${API_URL}/api/equipos/${id_equipo}`, {
         method: 'DELETE',
         credentials: 'include'
       });

@@ -3,7 +3,7 @@ USE F1GarageManager;
 GO
 
 -- =============================================
--- SP 1: Crear un carro nuevo (vacío)
+-- SP 1: Crear un carro nuevo (vacio)
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.sp_CrearCarro
     @id_equipo INT
@@ -18,7 +18,7 @@ BEGIN
         RETURN;
     END
 
-    -- Validar que el equipo no tenga más de 2 carros
+    -- Validar que el equipo no tenga mas de 2 carros
     DECLARE @carros_actuales INT;
     SELECT @carros_actuales = COUNT(*) 
     FROM dbo.CARRO 
@@ -26,11 +26,11 @@ BEGIN
 
     IF @carros_actuales >= 2
     BEGIN
-        RAISERROR('El equipo ya tiene el máximo de 2 carros', 16, 1);
+        RAISERROR('El equipo ya tiene el maximo de 2 carros', 16, 1);
         RETURN;
     END
 
-    -- Crear carro en estado "Armando"
+    -- Crear carro en estado Armando
     INSERT INTO dbo.CARRO (id_equipo, id_conductor, estado)
     VALUES (@id_equipo, NULL, 'Armando');
 
@@ -74,7 +74,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    -- Información del carro
+    -- Informacion del carro
     SELECT 
         c.id_carro,
         c.id_equipo,
@@ -87,7 +87,7 @@ BEGIN
     LEFT JOIN dbo.USUARIO u ON co.id_usuario = u.id_usuario
     WHERE c.id_carro = @id_carro;
 
-    -- Partes instaladas por categoría
+    -- Partes instaladas por categoria
     SELECT 
         i.id_categoria,
         cat.tipo_de_parte,
@@ -115,7 +115,7 @@ END;
 GO
 
 -- =============================================
--- SP 4: Listar partes disponibles en inventario por categoría
+-- SP 4: Listar partes disponibles en inventario por categoria
 -- =============================================
 CREATE OR ALTER PROCEDURE dbo.sp_ListarInventarioPorCategoria
     @id_equipo INT,
@@ -167,7 +167,7 @@ BEGIN
         RETURN;
     END
 
-    -- Validar que el carro esté en estado "Armando"
+    -- Validar que el carro este en estado Armando
     DECLARE @estado VARCHAR(20);
     SELECT @estado = estado FROM dbo.CARRO WHERE id_carro = @id_carro;
 
@@ -178,31 +178,18 @@ BEGIN
         RETURN;
     END
 
-    -- Validar que la parte sea de la categoría correcta
+    -- Validar que la parte sea de la categoria correcta
     DECLARE @categoria_parte INT;
     SELECT @categoria_parte = id_categoria FROM dbo.PARTE WHERE id_parte = @id_parte;
 
     IF @categoria_parte <> @id_categoria
     BEGIN
         ROLLBACK;
-        RAISERROR('La parte no pertenece a la categoría seleccionada', 16, 1);
+        RAISERROR('La parte no pertenece a la categoria seleccionada', 16, 1);
         RETURN;
     END
 
-    -- Validar que la parte esté en el inventario del equipo
-    DECLARE @cantidad_disponible INT;
-    SELECT @cantidad_disponible = cantidad 
-    FROM dbo.TIENE 
-    WHERE id_equipo = @id_equipo AND id_parte = @id_parte;
-
-    IF @cantidad_disponible IS NULL OR @cantidad_disponible <= 0
-    BEGIN
-        ROLLBACK;
-        RAISERROR('La parte no está disponible en el inventario', 16, 1);
-        RETURN;
-    END
-
-    -- Verificar si ya hay una parte instalada en esa categoría
+    -- Verificar si ya hay una parte instalada en esa categoria
     DECLARE @parte_actual INT;
     SELECT @parte_actual = id_parte 
     FROM dbo.INSTALA 
@@ -211,22 +198,13 @@ BEGIN
     IF @parte_actual IS NOT NULL
     BEGIN
         -- Ya hay una parte, entonces es un reemplazo
-        -- Devolver la parte anterior al inventario
-        UPDATE dbo.TIENE
-        SET cantidad = cantidad + 1
-        WHERE id_equipo = @id_equipo AND id_parte = @parte_actual;
-
-        -- Eliminar la instalación anterior
+        -- Eliminar la instalacion anterior (el trigger devolvera el inventario)
         DELETE FROM dbo.INSTALA
         WHERE id_carro = @id_carro AND id_categoria = @id_categoria;
     END
 
-    -- Disminuir inventario de la nueva parte
-    UPDATE dbo.TIENE
-    SET cantidad = cantidad - 1
-    WHERE id_equipo = @id_equipo AND id_parte = @id_parte;
-
     -- Instalar la nueva parte
+    -- El trigger se encargara de validar y descontar el inventario
     INSERT INTO dbo.INSTALA (id_carro, id_categoria, id_parte, id_equipo, fecha_instalacion)
     VALUES (@id_carro, @id_categoria, @id_parte, @id_equipo, CAST(GETDATE() AS DATE));
 
@@ -273,14 +251,14 @@ BEGIN
         RETURN;
     END
 
-    -- Validar que el conductor no esté asignado a otro carro
+    -- Validar que el conductor no este asignado a otro carro
     IF EXISTS (
         SELECT 1 FROM dbo.CARRO 
         WHERE id_conductor = @id_conductor 
           AND id_carro <> @id_carro
     )
     BEGIN
-        RAISERROR('El conductor ya está asignado a otro carro', 16, 1);
+        RAISERROR('El conductor ya esta asignado a otro carro', 16, 1);
         RETURN;
     END
 
@@ -309,7 +287,7 @@ BEGIN
         RETURN;
     END
 
-    -- Validar que tenga las 5 categorías instaladas
+    -- Validar que tenga las 5 categorias instaladas
     DECLARE @categorias_instaladas INT;
     SELECT @categorias_instaladas = COUNT(DISTINCT id_categoria)
     FROM dbo.INSTALA
@@ -317,7 +295,7 @@ BEGIN
 
     IF @categorias_instaladas < 5
     BEGIN
-        RAISERROR('El carro debe tener las 5 categorías instaladas para finalizarlo', 16, 1);
+        RAISERROR('El carro debe tener las 5 categorias instaladas para finalizarlo', 16, 1);
         RETURN;
     END
 
@@ -385,7 +363,7 @@ BEGIN
         RETURN;
     END
 
-    -- No permitir eliminar si ya participó en simulaciones
+    -- No permitir eliminar si ya participo en simulaciones
     IF EXISTS (SELECT 1 FROM dbo.RESULTADO WHERE id_carro = @id_carro)
     BEGIN
         ROLLBACK;
@@ -414,7 +392,7 @@ BEGIN
     DELETE FROM dbo.INSTALA
     WHERE id_carro = @id_carro;
 
-    -- Eliminar carro (esto libera al conductor automáticamente)
+    -- Eliminar carro (esto libera al conductor automaticamente)
     DELETE FROM dbo.CARRO
     WHERE id_carro = @id_carro;
 
@@ -496,13 +474,13 @@ BEGIN
     THROW 51001, 'El carro no existe', 1;
 
   IF EXISTS (SELECT 1 FROM dbo.CARRO WHERE id_carro = @id_carro AND estado <> 'Finalizado')
-    THROW 51002, 'Solo se puede reabrir un carro que esté en estado Finalizado', 1;
+    THROW 51002, 'Solo se puede reabrir un carro que este en estado Finalizado', 1;
 
   UPDATE dbo.CARRO
   SET estado = 'Armando'
   WHERE id_carro = @id_carro;
 
-  SELECT 'Carro reabierto (Armando). Ya podés cambiar las partes.' AS mensaje;
+  SELECT 'Carro reabierto (Armando). Ya podes cambiar las partes.' AS mensaje;
 END;
 GO
 

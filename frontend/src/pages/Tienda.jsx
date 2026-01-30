@@ -1,9 +1,10 @@
 import '../styles/tienda.css';
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 
 export default function Tienda() {
-  const { usuario } = useAuth(); // Importar useAuth
+  const { usuario } = useAuth();
   const [equipos, setEquipos] = useState([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState(null);
   const [presupuesto, setPresupuesto] = useState(null);
@@ -38,12 +39,12 @@ export default function Tienda() {
 
   async function cargarEquipos() {
     try {
-      const res = await fetch('http://localhost:3001/api/equipos', {
+      const res = await fetch(`${API_URL}/api/equipos`, {
         credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
-        
+
         // Si es Engineer, solo cargar su equipo
         if (usuario?.rol === 'Engineer' && usuario?.id_equipo) {
           const miEquipo = data.filter(e => e.id_equipo === usuario.id_equipo);
@@ -65,7 +66,7 @@ export default function Tienda() {
   async function cargarPresupuesto() {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/equipos/${equipoSeleccionado}/presupuesto`,
+        `${API_URL}/api/equipos/${equipoSeleccionado}/presupuesto`,
         { credentials: 'include' }
       );
       if (res.ok) {
@@ -79,7 +80,7 @@ export default function Tienda() {
 
   async function cargarPartes() {
     try {
-      const res = await fetch('http://localhost:3001/api/partes', {
+      const res = await fetch(`${API_URL}/api/partes`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -93,21 +94,23 @@ export default function Tienda() {
 
   async function realizarCompra(e) {
     e.preventDefault();
-    
+
     if (!parteSeleccionada || cantidad < 1) {
       alert('Por favor verifica la cantidad');
       return;
     }
 
     const costoTotal = parteSeleccionada.precio * cantidad;
-    
+
     // Validar presupuesto disponible
     if (presupuesto && costoTotal > presupuesto.presupuesto_disponible) {
-      alert(`Presupuesto insuficiente. Disponible: $${presupuesto.presupuesto_disponible.toLocaleString()}, Necesario: $${costoTotal.toLocaleString()}`);
+      alert(
+        `Presupuesto insuficiente. Disponible: $${presupuesto.presupuesto_disponible.toLocaleString()}, Necesario: $${costoTotal.toLocaleString()}`
+      );
       return;
     }
 
-    // Validar stock disponible
+    // Validar stock disponible (frontend)
     if (cantidad > parteSeleccionada.stock) {
       alert(`Stock insuficiente. Disponible: ${parteSeleccionada.stock} unidades`);
       return;
@@ -116,7 +119,7 @@ export default function Tienda() {
     setCargando(true);
 
     try {
-      const res = await fetch('http://localhost:3001/api/compras', {
+      const res = await fetch(`${API_URL}/api/compras`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -127,21 +130,45 @@ export default function Tienda() {
         })
       });
 
-      const data = await res.json();
+      let data = null;
+      const contentType = res.headers.get('content-type') || '';
+
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        data = { message: text };
+      }
 
       if (res.ok) {
-        alert(`Compra exitosa!\n\n${cantidad} x ${parteSeleccionada.nombre}\nTotal: $${costoTotal.toLocaleString()}`);
+        alert(
+          `Compra exitosa!\n\n${cantidad} x ${parteSeleccionada.nombre}\nTotal: $${costoTotal.toLocaleString()}`
+        );
         setModalCompra(false);
         setParteSeleccionada(null);
         setCantidad(1);
+
         // Recargar datos actualizados
-        await Promise.all([
-          cargarPresupuesto(),
-          cargarPartes()
-        ]);
+        await Promise.all([cargarPresupuesto(), cargarPartes()]);
       } else {
-        alert(`Error: ${data.message || 'No se pudo completar la compra'}`);
+        // Agarrar el mejor mensaje posible
+        const rawMsg = (data?.message || data?.error || '').toString();
+        const msg = rawMsg.toLowerCase();
+
+        const esSinStock =
+          res.status === 409 ||
+          msg.includes('stock insuficiente') ||
+          msg.includes('sin stock');
+
+        if (esSinStock) {
+          alert('No hay stock suficiente para completar la compra.');
+          await cargarPartes(); // refrescar catálogo
+          return;
+        }
+
+        alert(`Error: ${rawMsg || 'No se pudo completar la compra'}`);
       }
+
     } catch (err) {
       console.error('Error:', err);
       alert('No se pudo conectar con el servidor');
@@ -160,9 +187,10 @@ export default function Tienda() {
     setModalCompra(true);
   }
 
-  const partesFiltradas = filtroCategoria === 'todas' 
-    ? partes 
-    : partes.filter(p => p.categoria === filtroCategoria);
+  const partesFiltradas =
+    filtroCategoria === 'todas'
+      ? partes
+      : partes.filter(p => p.categoria === filtroCategoria);
 
   const equipoActual = equipos.find(e => e.id_equipo === equipoSeleccionado);
 
@@ -240,7 +268,7 @@ export default function Tienda() {
                   <h4>{parte.nombre}</h4>
                   <span className="categoria-badge">{parte.categoria}</span>
                 </div>
-                
+
                 <div className="parte-stats">
                   <div className="stat">
                     <span>P: {parte.P || parte.p || 0}</span>
@@ -256,7 +284,11 @@ export default function Tienda() {
                 <div className="parte-footer">
                   <div className="precio-stock">
                     <span className="precio">${parte.precio?.toLocaleString()}</span>
-                    <span className={`stock ${parte.stock === 0 ? 'agotado' : parte.stock < 5 ? 'bajo' : ''}`}>
+                    <span
+                      className={`stock ${
+                        parte.stock === 0 ? 'agotado' : parte.stock < 5 ? 'bajo' : ''
+                      }`}
+                    >
                       {parte.stock === 0 ? 'Agotado' : `Stock: ${parte.stock}`}
                     </span>
                   </div>
@@ -279,11 +311,11 @@ export default function Tienda() {
         <div className="modal-overlay" onClick={() => !cargando && setModalCompra(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h3>Confirmar Compra</h3>
-            
+
             <div className="compra-detalle">
               <h4>{parteSeleccionada.nombre}</h4>
               <p className="categoria-badge">{parteSeleccionada.categoria}</p>
-              
+
               <div className="stats-compra">
                 <span>Potencia: {parteSeleccionada.P || parteSeleccionada.p || 0}</span>
                 <span>Aerodinámica: {parteSeleccionada.A || parteSeleccionada.a || 0}</span>
@@ -291,8 +323,13 @@ export default function Tienda() {
               </div>
 
               <div className="precio-info">
-                <p>Precio unitario: <strong>${parteSeleccionada.precio?.toLocaleString()}</strong></p>
-                <p>Stock disponible: <strong>{parteSeleccionada.stock} unidades</strong></p>
+                <p>
+                  Precio unitario:{' '}
+                  <strong>${parteSeleccionada.precio?.toLocaleString()}</strong>
+                </p>
+                <p>
+                  Stock disponible: <strong>{parteSeleccionada.stock} unidades</strong>
+                </p>
               </div>
 
               <div className="form-group">
@@ -302,7 +339,11 @@ export default function Tienda() {
                   min="1"
                   max={parteSeleccionada.stock}
                   value={cantidad}
-                  onChange={e => setCantidad(Math.max(1, Math.min(parteSeleccionada.stock, Number(e.target.value))))}
+                  onChange={e =>
+                    setCantidad(
+                      Math.max(1, Math.min(parteSeleccionada.stock, Number(e.target.value)))
+                    )
+                  }
                   className="input-field"
                   disabled={cargando}
                 />
@@ -317,7 +358,7 @@ export default function Tienda() {
 
               {presupuesto && (
                 <div className="validacion-presupuesto">
-                  {(parteSeleccionada.precio * cantidad) > presupuesto.presupuesto_disponible ? (
+                  {parteSeleccionada.precio * cantidad > presupuesto.presupuesto_disponible ? (
                     <p className="error">Presupuesto insuficiente</p>
                   ) : (
                     <p className="success">Presupuesto suficiente</p>
@@ -327,21 +368,22 @@ export default function Tienda() {
             </div>
 
             <div className="modal-actions">
-              <button 
-                onClick={() => setModalCompra(false)} 
+              <button
+                onClick={() => setModalCompra(false)}
                 className="btn btn-secondary"
                 disabled={cargando}
               >
                 Cancelar
               </button>
-              <button 
-                onClick={realizarCompra} 
+              <button
+                onClick={realizarCompra}
                 className="btn btn-primary"
                 disabled={
                   cargando ||
-                  cantidad < 1 || 
+                  cantidad < 1 ||
                   cantidad > parteSeleccionada.stock ||
-                  (presupuesto && (parteSeleccionada.precio * cantidad) > presupuesto.presupuesto_disponible)
+                  (presupuesto &&
+                    parteSeleccionada.precio * cantidad > presupuesto.presupuesto_disponible)
                 }
               >
                 {cargando ? 'Procesando...' : 'Confirmar Compra'}

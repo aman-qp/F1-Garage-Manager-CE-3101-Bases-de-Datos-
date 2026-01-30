@@ -1,5 +1,6 @@
 import '../styles/presupuesto.css';
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 
 export default function Presupuesto() {
@@ -38,7 +39,7 @@ export default function Presupuesto() {
 
   async function cargarEquipos() {
     try {
-      const res = await fetch('http://localhost:3001/api/equipos', {
+      const res = await fetch(`${API_URL}/api/equipos`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -65,7 +66,7 @@ export default function Presupuesto() {
   async function cargarPresupuesto() {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/equipos/${equipoSeleccionado}/presupuesto`,
+        `${API_URL}/api/equipos/${equipoSeleccionado}/presupuesto`,
         { credentials: 'include' }
       );
       if (res.ok) {
@@ -80,7 +81,7 @@ export default function Presupuesto() {
   async function cargarPatrocinadores() {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/patrocinadores?id_equipo=${equipoSeleccionado}`,
+        `${API_URL}/api/patrocinadores?id_equipo=${equipoSeleccionado}`,
         { credentials: 'include' }
       );
       if (res.ok) {
@@ -95,7 +96,7 @@ export default function Presupuesto() {
   async function cargarAportes() {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/aportes/${equipoSeleccionado}`,
+        `${API_URL}/api/aportes/${equipoSeleccionado}`,
         { credentials: 'include' }
       );
       if (res.ok) {
@@ -110,7 +111,7 @@ export default function Presupuesto() {
   async function crearPatrocinador(e) {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3001/api/patrocinadores', {
+      const res = await fetch(`${API_URL}/api/patrocinadores`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -138,7 +139,7 @@ export default function Presupuesto() {
   async function registrarAporte(e) {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:3001/api/aportes', {
+      const res = await fetch(`${API_URL}/api/aportes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

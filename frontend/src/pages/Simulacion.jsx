@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { API_URL } from '../config'
 import '../styles/simulacion.css'
 
 export default function Simulacion() {
@@ -40,7 +41,7 @@ export default function Simulacion() {
 
   async function cargarCircuitos() {
     try {
-      const res = await fetch('http://localhost:3001/api/circuitos', {
+      const res = await fetch(`${API_URL}/api/circuitos`, {
         credentials: 'include'
       })
       if (!res.ok) return
@@ -53,7 +54,7 @@ export default function Simulacion() {
 
   async function cargarCarrosDisponibles() {
     try {
-      const res = await fetch('http://localhost:3001/api/carros/finalizados', {
+      const res = await fetch(`${API_URL}/api/carros/finalizados`, {
         credentials: 'include'
       })
 
@@ -136,7 +137,7 @@ export default function Simulacion() {
 
       const delay = new Promise(resolve => setTimeout(resolve, 3000))
 
-      const fetchData = fetch('http://localhost:3001/api/simulacion', {
+      const fetchData = fetch(`${API_URL}/api/simulacion`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

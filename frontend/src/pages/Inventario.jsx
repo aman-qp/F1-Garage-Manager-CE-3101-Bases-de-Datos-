@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { API_URL } from '../config';
 import { useAuth } from '../context/AuthContext';
 import '../styles/usuarios.css';
 
@@ -21,7 +22,7 @@ export default function Inventario() {
 
   async function cargarEquipos() {
     try {
-      const res = await fetch('http://localhost:3001/api/equipos', {
+      const res = await fetch(`${API_URL}/api/equipos`, {
         credentials: 'include'
       });
       if (res.ok) {
@@ -49,7 +50,7 @@ export default function Inventario() {
     setCargando(true);
     try {
       const res = await fetch(
-        `http://localhost:3001/api/inventario/${equipoSeleccionado}`,
+        `${API_URL}/api/inventario/${equipoSeleccionado}`,
         { credentials: 'include' }
       );
       if (res.ok) {

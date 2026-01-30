@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { API_URL } from '../config'
 import '../styles/usuarios.css'
 
 export default function Usuarios() {
@@ -33,7 +34,7 @@ export default function Usuarios() {
 
   async function cargarUsuarios() {
     try {
-      const res = await fetch('http://localhost:3001/api/usuarios', {
+      const res = await fetch(`${API_URL}/api/usuarios`, {
         credentials: 'include'
       })
       const data = await res.json()
@@ -61,7 +62,7 @@ export default function Usuarios() {
 
   async function cargarEquipos() {
     try {
-      const res = await fetch('http://localhost:3001/api/equipos', {
+      const res = await fetch(`${API_URL}/api/equipos`, {
         credentials: 'include'
       })
       const data = await res.json()
@@ -104,7 +105,7 @@ export default function Usuarios() {
     }
 
     try {
-      const res = await fetch('http://localhost:3001/api/usuarios', {
+      const res = await fetch(`${API_URL}/api/usuarios`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -184,7 +185,7 @@ export default function Usuarios() {
     }
 
     try {
-      const res = await fetch(`http://localhost:3001/api/usuarios/${editForm.id}`, {
+      const res = await fetch(`${API_URL}/api/usuarios/${editForm.id}`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -214,7 +215,7 @@ export default function Usuarios() {
     if (!ok) return
 
     try {
-      const res = await fetch(`http://localhost:3001/api/usuarios/${u.id}`, {
+      const res = await fetch(`${API_URL}/api/usuarios/${u.id}`, {
         method: 'DELETE',
         credentials: 'include'
       })
